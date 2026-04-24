@@ -1,0 +1,1239 @@
+\documentclass[12pt]{article}
+\usepackage[T1]{fontenc}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{hyperref}
+\usepackage{geometry}
+\usepackage{graphicx}
+\geometry{margin=1in}
+
+\newtheorem{definition}{Definition}
+\newtheorem{proposition}{Proposition}
+\newtheorem{corollary}{Corollary}
+\newtheorem{conjecture}{Conjecture}
+\newtheorem{remark}{Remark}
+\newtheorem{example}{Example}
+
+\title{The Topology of Reliable Cognition:\\
+Grounding Structure, Cognitive Distance,\\
+and the Dynamics of Abductive Overwrite}
+
+\author{Minamo Minamoto\\
+Independent\\
+\texttt{minamominamoto4f5683f6@gmail.com}}
+
+\date{April 2026}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+We propose a structural framework linking symbol grounding and abductive
+dynamics in cognitive systems.
+Rather than treating grounding as a binary property, we model it as
+inducing a topology over a shared concept set, and introduce
+\emph{cognitive distance} ($d_\mathrm{cog}$) to quantify structural
+similarity between agents.
+
+We operationalize $d_\mathrm{cog}$ via representational similarity
+analysis (RSA), defining a second-order correlation metric
+($\rho_\mathrm{cog}$) over concept-level activation patterns.
+Experiments on language models (Pythia-70m training checkpoints and
+GPT-2) show that relational structure becomes increasingly aligned
+through training, supporting the view that conceptual structure
+evolves continuously rather than via abrupt overwrites.
+Cross-model replication ($\rho_\mathrm{cog} \approx 0.42$ between
+GPT-2 and fully trained Pythia vs.\ $\approx 0.10$ vs.\ random
+initialization) suggests that training induces a shared representational
+geometry independent of architecture.
+
+We further introduce \emph{abductive overwrite} as a mechanism that
+restructures interpretive frames under hypothesis revision, and identify
+\emph{negative abductive capability} (NAC) as a structural condition
+for maintaining grounding stability.
+Evidence from comparative cognition (\textit{C.~elegans},
+\textit{Drosophila}, \textit{Apis mellifera}) illustrates that
+behavioral equivalence does not imply representational equivalence.
+These notions generate three testable predictions linking training
+dynamics, representational geometry, and behavioral outcomes.
+
+Our results suggest that grounding should be understood as a structural,
+measurable property, providing a bridge between cognitive theory and
+empirical analysis of artificial systems.
+\end{abstract}
+
+\noindent\textbf{Keywords:} symbol grounding, abduction, cognitive distance, negative abductive capability, representational similarity analysis, comparative cognition
+
+\tableofcontents
+
+\section{Introduction}
+% ============================================================
+
+Two questions about cognition have received sustained but largely
+separate treatment in the literature.
+The first is the \emph{symbol grounding problem}: how do internal
+symbols acquire meaning anchored in sensorimotor experience
+\cite{harnad1990}?
+The second is the \emph{problem of abduction}: how do cognitive
+systems generate and revise hypotheses under uncertainty
+\cite{peirce1903,harman1965}?
+
+We propose a framework in which these questions are structurally
+connected: the topology of the sensory space determines both the
+geometry of cognitive representations and the dynamics of hypothesis
+revision.
+
+The standard treatment of symbol grounding is binary: either a symbol
+system is causally connected to sensorimotor states (grounded) or it
+is not.
+We argue that this framing conceals the deeper question: grounded
+\emph{in what}, and \emph{how}?
+Two agents may each satisfy Harnad's condition while inhabiting mutually
+incommensurable representational spaces.
+The existence of grounding does not imply the equivalence of grounding.
+
+The standard treatment of abduction presents hypothesis revision as
+correction: a bad hypothesis is detected and patched while the
+underlying representational architecture remains intact.
+We argue that this framing is structurally wrong: when an agent adopts
+a new hypothesis, that hypothesis restructures the interpretive frame
+through which all subsequent input is processed.
+Revision is therefore not correction but \emph{overwrite}.
+A premature overwrite does not introduce a local error; it establishes
+a biased initial condition for all downstream cognition.
+
+Connecting these two claims: the grounding-induced topology of a
+cognitive system is not fixed at birth but updated through abductive
+transitions.
+Premature overwrite is therefore a \emph{dynamic source} of topological
+distortion---it increases $d_\mathrm{cog}$ not by mismatching sensory
+spaces but by committing to an interpretive frame before the evidence
+base is sufficient to determine the correct topology.
+
+Reliable cognition requires both the right structure (\emph{grounding
+equivalence}) and the right dynamics (\emph{negative abductive
+capability}).
+A system that has the right sensory apparatus but commits prematurely
+will accumulate topological distortion over time.
+A system that suspends commitment appropriately preserves the structural
+integrity of its representational space.
+
+\paragraph{Relation to prior work.}
+G\"{a}rdenfors's theory of conceptual spaces \cite{gardenfors2000}
+provides the closest precedent for a geometric approach to meaning.
+Our framework is complementary but distinct: we derive the geometry
+from sensory transduction rather than stipulating quality dimensions in
+advance, and we use topology rather than Euclidean convexity.
+The abduction literature from Peirce onward has framed hypothesis
+revision as search within a fixed representational space; our overwrite
+model replaces the fixed-space assumption.
+
+\paragraph{Scope and falsifiability.}
+This paper is a theoretical proposal, not a completed formal theory.
+The central claims are advanced as structural hypotheses supported by
+definitional argument and phenomenological evidence from comparative
+cognition; their full formal generalization is not established.
+We identify three classes of empirical evidence that would bear on the
+theory.
+First, the $d_\mathrm{cog}$ framework predicts that species sharing
+behavioral rules but not sensory topologies will show systematically
+higher $d_\mathrm{cog}$ as measured by representational similarity
+analysis \cite{kriegeskorte2008}; this is testable via neural recording
+in behavioral paradigms that equate transfer accuracy across species.
+Second, the NAC hypothesis predicts that agents with higher commitment
+thresholds will show lower premature overwrite rates under ambiguous
+stimuli with gradually accumulating evidence; this is measurable as
+commitment latency and reversibility in both biological and artificial
+systems.
+Third, the overwrite-as-$d_\mathrm{cog}$-increase hypothesis predicts
+that training conditions that suppress suspension (e.g., contrastive
+objectives) will produce higher $d_\mathrm{cog}$ relative to an
+ideally grounded reference, measurable via RSA on learned
+representations.
+Open Problems (Section~8) identify the most pressing formalization
+and measurement obligations.
+
+\medskip
+\noindent
+\textbf{Central variables.}
+The two central variables of this paper are $d_\mathrm{cog}$ and NAC.
+$d_\mathrm{cog}$ is the static measure: how far apart are two agents'
+grounding-induced topologies?
+NAC is the dynamic condition: does the agent have the capacity to
+prevent that gap from widening through premature commitment?
+All other constructs in the paper---suspension region, commitment
+threshold, overwrite transition, bias propagation factor---are
+supporting definitions that make these two variables precise.
+
+% ============================================================
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.82\textwidth]{cogsci_unified_fig1_concept.png}
+\caption{
+\textbf{Grounding structure and cognitive distance.}
+Each agent's sensory space $S(A)$ induces a topology $\tau_A$ on the
+shared symbol set $\Sigma$ via the grounding map $G_A$.
+The cognitive distance $d_\mathrm{cog}(A,B)$ measures the structural
+gap between $\tau_A$ and $\tau_B$, operationalized as the
+second-order RSA correlation $\rho_\mathrm{cog}$ (see
+Remark~\ref{rem:rsa-operationalization}).
+}
+\label{fig:concept}
+\end{figure}
+
+\section{The Topology of Grounding}
+% ============================================================
+
+\subsection{Sensory Spaces}
+
+Let $A$ be a cognitive agent equipped with transduction channels
+$\mathcal{T} = \{T_1, \ldots, T_n\}$, where each $T_i$ maps physical
+stimuli in domain $\Phi_i$ to internal activation states $A_i$.
+
+\begin{definition}[Sensory Space]
+The sensory space of agent $A$ is the product space
+\[
+S(A) = \prod_{i=1}^{n} A_i
+\]
+equipped with the product topology, where each $A_i$ carries the
+topology induced by the neural activation metric of channel $T_i$.
+\end{definition}
+
+\begin{remark}
+This definition is intentionally coarse. Cross-modal interactions and
+attentional modulation couple the channels; a refined treatment would
+replace the product with a fiber bundle. We use the product topology
+as a first approximation and flag the refinement as OP2.
+\end{remark}
+
+\subsection{Grounding as a Map}
+
+Let $\Sigma$ be a set of symbols. Let $\mathcal{K}(S(A))$ denote
+the hyperspace of nonempty closed subsets of $S(A)$, equipped with
+the Vietoris topology \cite{vietoris1922}.
+
+\begin{definition}[Weak Grounding]
+A grounding map for $A$ is a function $G : \Sigma \to \mathcal{K}(S(A))$
+where $G(\sigma)$ is the closed set of sensory states associated with
+symbol $\sigma$. The symbol set $\Sigma$ is \emph{weakly grounded}
+in $A$ if $G(\sigma) \neq \emptyset$ for all $\sigma \in \Sigma$.
+\end{definition}
+
+Weak grounding is Harnad's condition. It rules out purely formal
+symbol systems but says nothing about the structure of $G(\sigma)$
+within $S(A)$.
+
+\subsection{Topological Equivalence of Grounding}
+
+\begin{definition}[Grounding-Induced Topology]
+The grounding-induced topology $\tau_A$ on $\Sigma$ is the initial
+topology with respect to $G$: the coarsest topology making
+$\sigma \mapsto G(\sigma)$ continuous with respect to the Vietoris
+topology on $\mathcal{K}(S(A))$.
+\end{definition}
+
+\begin{definition}[Topological Equivalence of Grounding]
+Agents $A$ and $B$ are \emph{groundingly equivalent} with respect to
+$\Sigma$ if there exists a homeomorphism
+$h : (\Sigma, \tau_A) \to (\Sigma, \tau_B)$.
+\end{definition}
+
+Grounding equivalence is strictly stronger than weak grounding.
+Two agents may both be weakly grounded yet fail to be groundingly
+equivalent. This failure is what we call a \emph{topological mismatch
+of grounding}.
+
+\subsection{Cognitive Distance}
+
+\begin{conjecture}[Topological Sufficiency]
+If agents $A$ and $B$ are groundingly equivalent with respect to
+$\Sigma$, then they share every concept $\sigma \in \Sigma$ in the
+full intensional sense.
+\end{conjecture}
+
+\begin{conjecture}[Topological Necessity]
+If agents $A$ and $B$ share a concept $\sigma$ in the full intensional
+sense, then they are groundingly equivalent with respect to $\Sigma$.
+\end{conjecture}
+
+The contrapositive of Conjecture 2 is practically useful: if the
+sensory spaces of $A$ and $B$ are topologically inequivalent, then no
+bijection between their symbol sets constitutes a genuine translation.
+
+In practice, cognitive systems share concepts to varying degrees.
+We therefore introduce a graded framework.
+
+\begin{definition}[Cognitive Distance; v2 signature form]
+The \emph{cognitive distance} $d_\mathrm{cog}(A, B)$ is a measure of
+structural dissimilarity between the grounding-induced topologies
+$\tau_A$ and $\tau_B$ over a shared symbol set~$\Sigma$.
+Following the persistence signature formulation of
+\cite[Def.~\ref{def:dcog-signature}]{minamoto2026topology},
+$d_\mathrm{cog}$ is the tuple
+\[
+  d_\mathrm{cog}(A, B)
+  = \Big(\,
+      d_\mathrm{GH}\bigl((\Sigma, d_A), (\Sigma, d_B)\bigr),\;
+      \{d_\mathrm{bn}^{(k)}(A, B)\}_{k \geq 0},\;
+      \{\mathrm{PD}_k(A), \mathrm{PD}_k(B)\}_{k \geq 1}\,\Big),
+\]
+combining Gromov--Hausdorff distance with bottleneck distances
+between $k$-th Vietoris--Rips persistence diagrams
+(see Appendix~\ref{app:gh-theory} for the full construction).
+In practice it is operationalized via the second-order RSA
+correlation $\rho_\mathrm{cog}$ defined in
+Remark~\ref{rem:rsa-operationalization}, which serves as a tractable
+proxy for the $d_\mathrm{bn}^{(0)}$ component.
+The three-level hierarchy of conceptual alignment is:
+\end{definition}
+
+\begin{remark}[RSA Operationalization and Second-Order Structural Similarity]
+\label{rem:rsa-operationalization}
+Let $\Sigma = \{\sigma_1, \ldots, \sigma_n\}$ be a fixed probe concept
+set ($n = 29$ concepts spanning physical, abstract, relational,
+and temporal domains; see Appendix~\ref{app:probe-set}).
+For agent $A$ at hidden layer $\ell$, define the RSA dissimilarity matrix
+\[
+D^{A,\ell}_{ij} = 1 - \mathrm{corr}(\mathbf{h}^{A,\ell}_i,\, \mathbf{h}^{A,\ell}_j),
+\]
+where $\mathbf{h}^{A,\ell}_i \in \mathbb{R}^d$ is the mean hidden-state
+activation at layer $\ell$ elicited by a canonical prompt for $\sigma_i$
+\cite{kriegeskorte2008}.
+This defines a pseudo-metric space $(\Sigma, d^{A,\ell})$.
+
+We adopt as primary operative metric the \emph{second-order RSA correlation}
+\[
+\rho_\mathrm{cog}(A, B;\ell)
+  = \mathrm{Spearman}\!\left(
+      \mathrm{upper}(D^{A,\ell}),\,
+      \mathrm{upper}(D^{B,\ell})
+    \right),
+\]
+which measures structural similarity independently of scale.
+Here $\mathrm{upper}(\cdot)$ denotes the upper-triangular entries.
+$\rho_\mathrm{cog} = 1$ indicates identical relational geometry;
+$\rho_\mathrm{cog} = 0$ indicates structural independence;
+$\rho_\mathrm{cog} < 0$ indicates inverted relational structure.
+
+\smallskip
+\noindent\textbf{Pilot experiment (Pythia-70m).}
+We apply this operationalization to three publicly available training
+checkpoints of Pythia-70m \cite{biderman2023}:
+step~0 (random initialization), step~1000 (early training),
+and step~143000 (fully trained reference).
+RSA matrices are computed at hidden layers $\ell \in \{2, 4, 6\}$
+(early, middle, and final transformer layers) using $n = 29$ probe concepts.
+
+\noindent
+In all empirical analyses, $d_\mathrm{cog}$ is operationalized by
+$\rho_\mathrm{cog}$; the Gromov--Hausdorff formulation serves as the
+theoretical idealization whose full construction appears in
+Appendix~\ref{app:gh-theory}.
+More precisely, under the signature form introduced above,
+$\rho_\mathrm{cog}$ is a monotone proxy for the
+$d_\mathrm{bn}^{(0)}$ component of $d_\mathrm{cog}$ (merge-structure
+alignment); the higher-order components $d_\mathrm{bn}^{(k)}$
+($k \geq 1$) require larger concept inventories than the
+twenty-nine--concept probe set to surface reliably
+(see \cite[App.~\ref{app:dcog-h1}]{minamoto2026topology}), and are
+outside the scope of the analyses below.
+
+\noindent\textbf{Experiment 1: Training dynamics (Pythia-70m).}
+To validate Prediction~P3, we compare three publicly available
+training checkpoints of Pythia-70m \cite{biderman2023}:
+step~0 (random initialization), step~1000 (early training),
+and step~143000 (fully trained reference).
+RSA matrices are computed at hidden layers $\ell \in \{2, 4, 6\}$
+using $n = 29$ probe concepts and three prompt templates
+(\textit{``The concept of \{c\} is'', ``A \{c\} is'', ``\{c\} refers to''})
+averaged to reduce surface-form bias.
+
+\begin{center}
+\begin{tabular}{ccccc}
+\hline
+Layer $\ell$ & \multicolumn{2}{c}{$\rho_\mathrm{cog}(\cdot,\,\mathrm{ref})$}
+             & \multicolumn{2}{c}{$\hat{d}_\mathrm{cog}(\cdot,\,\mathrm{ref})$} \\
+             & step-0 & step-1000 & step-0 & step-1000 \\
+\hline
+2 & $0.095$ & $0.396$ & $0.154$ & $0.223$ \\
+4 & $0.064$ & $0.317$ & $0.170$ & $0.292$ \\
+6 & $0.017$ & $0.535$ & $0.176$ & $0.234$ \\
+\hline
+\end{tabular}
+\end{center}
+
+\noindent
+$\rho_\mathrm{cog}$ increases monotonically across all layers
+(step-0 $<$ step-1000, confirmed at $\ell = 2, 4, 6$),
+consistent with Prediction~P3.
+The near-zero variance of $D^{\mathrm{ref},\ell}$
+at $\ell = 6$ ($\sigma \approx 10^{-4}$) reflects the known
+representation isotropy of deeply-trained language models
+\cite{ethayarajh2019}---itself a measurable signature of the
+grounding-topology collapse described in Proposition~\ref{prop:overwrite}---which
+renders $\hat{d}_\mathrm{cog}$ unreliable in this regime.
+We therefore adopt $\rho_\mathrm{cog}$ as the primary operative metric.
+
+\smallskip
+\noindent\textbf{Experiment 2: Cross-model replication (GPT-2).}
+To assess whether results are model-specific, we compute
+$\rho_\mathrm{cog}$ between GPT-2 small (trained) and
+Pythia-70m at both the trained and random-initialization checkpoints.
+
+\begin{center}
+\begin{tabular}{ccc}
+\hline
+Layer $\ell$ & GPT-2 vs Pythia-trained & GPT-2 vs Pythia-step-0 \\
+\hline
+2 & $0.419$ & $0.061$ \\
+4 & $0.413$ & $0.128$ \\
+6 & $0.419$ & $0.103$ \\
+\hline
+\end{tabular}
+\end{center}
+
+\noindent
+Across all layers,
+$\rho_\mathrm{cog}(\text{GPT-2}, \text{Pythia-trained})
+  \gg \rho_\mathrm{cog}(\text{GPT-2}, \text{Pythia-step-0})$
+($\approx 0.42$ vs.\ $\approx 0.10$, replicated at $\ell = 2, 4, 6$).
+Two architectures trained on distinct corpora converge to similar
+relational geometry over the probe concept set,
+while random initialization shares no such structure.
+This cross-model convergence is consistent with the claim that
+training induces a shared grounding topology, rather than an
+architecture-specific artifact.
+
+\smallskip
+\noindent
+All code and data are available at
+\url{https://github.com/minamominamoto/grounding-without-reality}.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.92\textwidth]{cogsci_unified_fig2_rho_results.png}
+\caption{
+\textbf{RSA-based cognitive distance across training and models.}
+\textit{(a)} $\rho_\mathrm{cog}$ between Pythia-70m checkpoints and the
+fully trained reference (step-143000), measured at layers 2, 4, and 6.
+All layers show monotonic increase, consistent with Prediction~P3.
+\textit{(b)} Cross-model comparison: $\rho_\mathrm{cog}$ between
+GPT-2 (trained) and Pythia at trained vs.\ random-initialization
+checkpoints. Trained models show substantially higher structural
+alignment ($\rho \approx 0.42$) than random initialization
+($\rho \approx 0.10$), across all layers.
+}
+\label{fig:results}
+\end{figure}
+
+\smallskip
+\noindent\textbf{Limitations.}
+The RSA-based operationalization captures relational similarity in
+activation space and serves as a proxy for grounding-induced topology.
+It does not fully characterize grounding structure: results are
+sensitive to prompt formulation, representation anisotropy, and
+model-specific embedding geometry.
+Accordingly, $\rho_\mathrm{cog}$ should be interpreted as an ordinal
+measure of structural similarity rather than a complete metric of
+grounding equivalence.
+Extension to biological systems, where activation patterns cannot be
+directly extracted, remains the primary empirical obligation of OP1.
+\end{remark}
+
+This yields a three-level hierarchy:
+
+\begin{center}
+\begin{tabular}{lll}
+\hline
+Level & Condition & Interpretation \\
+\hline
+1 & $d_\mathrm{cog} < \infty$, weak grounding & Extensional overlap only \\
+2 & $d_\mathrm{cog}$ small & Approximate concept sharing \\
+3 & $d_\mathrm{cog} = 0$ & Homeomorphism; full intensional sharing \\
+\hline
+\end{tabular}
+\end{center}
+
+% ============================================================
+
+\section{Evidence from Comparative Cognition}
+% ============================================================
+
+The cases examined in this section are illustrative rather than
+confirmatory: they motivate the need for the framework by showing that
+the question of grounding structure arises in real biological systems,
+but they do not by themselves establish non-homeomorphism of
+grounding-induced topologies.
+That determination requires the empirical program of OP1.
+The cases are chosen because their sensory spaces are well characterized
+and their cognitive capacities have been studied experimentally, making
+them natural first test cases for the theoretical framework.
+
+\subsection{\textit{Caenorhabditis elegans}: Minimal Grounding}
+
+\textit{C.~elegans} has exactly 302 neurons and approximately 7,000
+synapses, fully mapped \cite{white1986}.
+Its sensory apparatus consists primarily of chemosensory neurons.
+The organism exhibits chemotaxis---directed movement toward or away
+from chemical gradients---which can be formalized as a predict-and-correct
+loop: the animal generates an implicit prediction about gradient direction,
+detects deviation, and adjusts locomotion \cite{bargmann2006}.
+This constitutes the minimal implementation of an abductive-corrective loop.
+
+We note a further implication: this loop does not merely implement
+abduction but \emph{suspended abduction}. The organism does not commit
+to a directional hypothesis on the basis of a single reading; it maintains
+the hypothesis tentatively, continues to sample, and revises only when
+accumulated evidence warrants it.
+The 302-neuron architecture constitutes a candidate minimal biological
+implementation of negative abductive capability (Section~4):
+the predict-and-correct loop is structurally required to run multiple
+correction cycles before the organism commits to a locomotor decision,
+instantiating suspension in neural dynamics.
+
+The sensory space $S(\textit{C.~elegans})$ is low-dimensional, dominated
+by the chemosensory axis. The grounding-induced topology on whatever
+proto-symbol set the organism maintains is therefore a low-dimensional
+chemical topology.
+
+\begin{example}
+The symbol \textsc{food-source} in \textit{C.~elegans} is grounded in
+chemical gradients. In \textit{Homo sapiens}, the same extensional
+referent is grounded in a high-dimensional space including visual shape,
+color, texture, weight, smell, taste, and social context. The
+grounding-induced topologies are plausibly non-equivalent; the
+``concept'' is therefore unlikely to be shared in the intensional sense.
+\end{example}
+
+\subsection{\textit{Drosophila melanogaster}: Intermediate Complexity}
+
+\textit{Drosophila} possesses compound eyes sensitive to ultraviolet
+and polarized light, olfactory neurons, mechanoreceptors, and gustatory
+receptors.
+Recent connectome data \cite{scheffer2020} reveals extensive cross-modal
+convergence zones in the central complex, where olfactory, visual, and
+proprioceptive information is combined nonlinearly.
+This suggests $S(\textit{Drosophila})$ has a non-trivial fiber bundle
+structure not captured by the product topology of Definition~1---a
+concrete empirical case where the fiber bundle refinement of OP2
+becomes necessary.
+
+\subsection{\textit{Apis mellifera}: Abstract Concepts in a Non-Human Sensory Space}
+
+The honeybee provides the most philosophically striking case.
+Bees learn abstract relational concepts---``same as'' and ``different
+from''---and transfer them to novel stimuli \cite{giurfa2001}.
+Bees understand zero as a quantity smaller than one \cite{howard2018}
+and can count up to four \cite{howard2019}.
+
+The bees' sensory space is dominated by olfactory transduction of
+volatile organic compounds, ultraviolet-sensitive photoreception,
+and mechanoreception of substrate vibration.
+The waggle dance encodes food-source location through bodily kinematics
+calibrated to flight energy---not abstract distance
+\cite{riley2005}---constituting weak grounding in the sense of
+Definition~2.
+
+The bee's concept of \textsc{same} is grounded in a sensory space
+structured by olfactory, ultraviolet, and mechanoreceptive dimensions.
+The human concept of \textsc{same} is grounded in a space structured
+by visual, auditory, and tactile dimensions.
+Both agents possess the concept in an abstract sense, but the
+grounding-induced topologies plausibly differ.
+On the present framework, this supports the hypothesis that the
+intensional content is not shared---a conclusion that would follow if
+Conjecture~2 holds.
+
+% ============================================================
+\section{Abduction as Overwrite}
+% ============================================================
+
+\subsection{Representational States and the Overwrite Transition}
+
+Let $\mathcal{R}$ denote the space of representational states of
+agent $A$.
+A representational state $R \in \mathcal{R}$ encodes the agent's
+current interpretation of sensory input: the active hypotheses, the
+assigned categories, the weighted priors over sensory signals.
+
+\begin{definition}[Interpretive Frame]
+The interpretive frame $F(R)$ induced by state $R$ is the function
+$F(R) : \mathcal{X} \to \mathcal{Y}$
+that maps sensory inputs $x \in \mathcal{X}$ to interpreted outputs
+$y \in \mathcal{Y}$ under the current representational state.
+\end{definition}
+
+\begin{definition}[Categorical Distinctness]
+\label{def:categorical-distinctness}
+Two hypotheses $h$ and $h'$ are \emph{categorially distinct} if the
+partitions of $\mathcal{X}$ they induce are topologically inequivalent:
+$\tau_{h'} \neq \tau_h$.
+A \emph{correction} is a state change in which the induced topologies
+are homeomorphic; an \emph{overwrite} is a state change in which they
+are not.
+\end{definition}
+
+\begin{proposition}[Abductive Transitions are Overwrites]
+\label{prop:overwrite}
+Let $A$ adopt a new explanatory hypothesis $h_{t+1}$ at time $t+1$
+that supersedes $h_t$.
+If $h_{t+1}$ is categorially distinct from $h_t$, then the resulting
+state transition is an overwrite, not a correction.
+\end{proposition}
+
+\subsection{Bias Propagation after Premature Overwrite}
+
+\begin{definition}[Premature Overwrite]
+An overwrite transition $R_t \to R_{t+1}$ is premature if the evidence
+base $E_t$ is insufficient to distinguish $h_{t+1}$ from competing
+hypotheses at an acceptable confidence level $\theta$:
+$P(h_{t+1} \mid E_t) < \theta$ while some $h^i \neq h_{t+1}$ satisfies
+$P(h^i \mid E_t) \geq \theta$.
+\end{definition}
+
+\begin{proposition}[Bias Propagation]
+\label{prop:bias}
+Let $R_{t+1}$ result from a premature overwrite where $h_{t+1}$ is
+categorially distinct from the ground-truth hypothesis $h^*$.
+Then for all subsequent inputs $x_{t'}$, $t' > t$, the interpreted
+output $F(R_{t+1})(x_{t'})$ carries systematic bias toward $h_{t+1}$.
+\end{proposition}
+
+\begin{conjecture}[Non-Reducibility of Categorical Bias]
+\label{conj:nonreducibility}
+Within the committed frame $F(R_{t+1})$, the bias introduced by a
+categorially distinct premature overwrite is non-reducible by further
+Bayesian updating alone; it can only be eliminated by a subsequent
+overwrite transition.
+The toy model in Appendix~\ref{app:toy-model} illustrates this claim
+in a two-hypothesis setting under fixed frame constraints.
+Full generality across hypothesis classes and frame structures
+constitutes an open problem (OP3).
+\end{conjecture}
+
+\begin{remark}[Scope]
+The non-reducibility claim is restricted to categorially distinct
+hypotheses. When $h_{t+1}$ and $h^*$ induce homeomorphic partitions
+of $\mathcal{X}$, standard Bayesian updating will converge to the
+correct posterior. The present claim applies specifically to cases in
+which the adopted hypothesis restructures the topology of the
+interpretive frame.
+\end{remark}
+
+\begin{corollary}
+In the categorially distinct case, a premature overwrite is not
+recoverable by Bayesian updating within the committed frame.
+It constitutes a structural initial condition that propagates
+interpretive bias until a subsequent overwrite occurs.
+This corollary is conditional on the non-reducibility conjecture
+in Proposition~\ref{prop:bias}; its empirical status is assessed
+via Predictions P2 and P3.
+\end{corollary}
+
+\subsection{Premature Overwrite as a Dynamic Source of $d_\mathrm{cog}$ Increase}
+
+The grounding-induced topology $\tau_A$ is not fixed; it is updated
+by abductive transitions.
+To make this precise, we note the following structural connection between
+overwrite transitions and changes in $\tau_A$.
+
+\begin{proposition}[Overwrite May Induce Topology Change]
+\label{prop:overwrite-tau}
+Let $A$ undergo an overwrite transition from state $R_t$ to $R_{t+1}$,
+where the adopted hypothesis $h_{t+1}$ is categorially distinct from
+$h_t$ (Definition~\ref{def:categorical-distinctness}).
+Then the grounding map updates: $G_{t+1}(\sigma) \neq G_t(\sigma)$ for
+at least one $\sigma \in \Sigma$.
+Under the assumption that this update induces a non-homeomorphic
+reorganization of symbol neighborhoods---that is, that the updated
+grounding map does not happen to preserve the initial topology---the
+grounding-induced topology changes: $\tau_{t+1} \neq \tau_t$,
+and the two states imply positive cognitive distance:
+$d_\mathrm{cog}(A_t, A_{t+1}) > 0$ under this assumption.
+\end{proposition}
+
+\begin{remark}
+The conditional in Proposition~\ref{prop:overwrite-tau} is non-trivial:
+it is conceivable that a categorially distinct overwrite changes the
+grounding map while leaving the induced initial topology invariant, if
+the new and old maps happen to generate the same open sets on $\Sigma$.
+We regard this as a degenerate case unlikely to arise in systems with
+rich symbol sets, but acknowledge it as a formal gap.
+The assumption is satisfied in the Appendix~A toy model, where the
+two hypotheses induce genuinely distinct partitions of $\mathbb{R}^2$
+with non-homeomorphic induced topologies.
+The general condition under which a grounding map update is guaranteed
+to change $\tau_A$ is listed as OP6.
+\end{remark}
+
+Premature overwrite therefore constitutes a \emph{dynamic} source of
+$d_\mathrm{cog}$ increase: the topology of the committed frame deviates
+from the topology of the ideal frame, and this deviation propagates
+until the next overwrite.
+
+This connects the two parts of the paper.
+Topological mismatch between agents (Section~2) has two sources:
+(i) structural mismatch in sensory space, and
+(ii) differential abductive history---agents that commit at different
+rates or under different evidence conditions will accumulate different
+topological distortions over time.
+$d_\mathrm{cog}$ is therefore a dynamic quantity, not merely a static
+comparison of sensory spaces.
+
+% ============================================================
+\section{Negative Abductive Capability}
+% ============================================================
+
+\subsection{Definition}
+
+\begin{definition}[Suspension Region]
+The suspension region $\mathcal{S} \subset \mathcal{R}$ is the set of
+representational states in which the agent maintains active hypotheses
+tentatively without committing to any single overwrite.
+An agent in a suspension state accumulates evidence and updates
+probability weights without triggering a frame-restructuring transition.
+\end{definition}
+
+\begin{definition}[Commitment Threshold]
+The commitment threshold $\theta^* \in (0,1)$ is the minimum posterior
+probability required to trigger an overwrite transition.
+\end{definition}
+
+\begin{definition}[Negative Abductive Capability (NAC)]
+\label{def:nac}
+An agent $A$ possesses negative abductive capability with respect to
+hypothesis class $\mathcal{H}$ if:
+\begin{enumerate}
+  \item $A$ maintains a well-defined suspension region $\mathcal{S}$;
+  \item $A$'s commitment threshold $\theta^*$ is calibrated to the
+        evidence requirements of $\mathcal{H}$; and
+  \item $A$ can remain in $\mathcal{S}$ for an extended observation
+        window without degradation of suspension capacity.
+\end{enumerate}
+
+The term is chosen by analogy with Keats's negative capability---
+the ability to remain ``in uncertainties, mysteries, doubts, without
+any irritable reaching after fact and reason'' \cite{keats1817}---
+recast here as a structural cognitive property rather than a poetic
+temperament.
+\end{definition}
+
+\begin{remark}
+NAC is not the absence of abductive capacity.
+An agent with high NAC can generate hypotheses, hold them in suspension,
+and commit only when evidence warrants.
+An agent with low NAC commits rapidly, accumulating bias.
+\end{remark}
+
+\begin{proposition}[NAC as Structural Prerequisite]
+Under the overwrite model, the expected bias accumulated per abductive
+cycle is a decreasing function of NAC and is conjectured to be
+independent of hypothesis-generation capacity.
+This structural hypothesis implies that abductive reliability cannot
+be improved by increasing generation capacity alone; NAC must be
+co-present.
+\end{proposition}
+
+\medskip
+\noindent
+\textbf{Central thesis.}
+\emph{Abduction requires negative capability.
+The power to infer depends on the power to suspend inference.}
+
+\subsection{NAC and $d_\mathrm{cog}$}
+
+An agent with NAC calibrated to $\mathcal{H}$ remains in suspension
+until $t \geq t^\dagger$ (the time at which evidence warrants
+commitment).
+The committed frame $F(R_{t^\dagger})$ is then homeomorphic to the
+ideal frame $F(R^*)$, and $d_\mathrm{cog}(A, A^*) = 0$.
+NAC is therefore a sufficient structural condition for $d_\mathrm{cog}$
+minimization within the present model.
+
+% ============================================================
+\section{Empirical Predictions}
+% ============================================================
+
+The framework yields the following predictions, each connecting a
+theoretical construct to a measurable quantity.
+
+\paragraph{P1. Behavioral equivalence does not imply representational equivalence.}
+Two species that demonstrate matched behavioral transfer accuracy on
+an abstract relational rule (\textsc{same}, \textsc{different},
+\textsc{zero}) may nevertheless differ in $d_\mathrm{cog}$.
+\emph{Measurement}: Collect neural activation patterns in each species
+during rule application; compute representational dissimilarity matrices
+via RSA \cite{kriegeskorte2008}; compare the resulting metric spaces
+via Gromov--Hausdorff distance.
+\emph{Prediction}: $d_\mathrm{cog}$ will be positive and inversely
+correlated with sensory space overlap across species pairs matched for
+behavioral accuracy.
+
+\paragraph{P2. NAC suppression increases premature commitment rate.}
+Agents or systems whose suspension capacity is structurally suppressed
+(high PCR) will commit to interpretive frames earlier under ambiguous
+or gradually accumulating evidence than agents with high NAC.
+\emph{Measurement (biological)}: Present ambiguous stimuli
+(e.g., multistable perceptual displays; contradictory chemical gradients
+for \textit{C.~elegans}) with controlled evidence accumulation rate;
+measure commitment latency (time to stable behavioral choice) and
+reversibility (degree to which contradictory evidence induces
+re-suspension).
+\emph{Measurement (AI)}: Use attribution graphs from mechanistic
+interpretability tools \cite{anthropic2025circuit} to identify whether
+multiple competing hypotheses are simultaneously active (suspension)
+or one hypothesis suppresses others (commitment); measure the transition
+latency as a function of evidence quality.
+\emph{Prediction}: Systems trained with contrastive objectives will
+show shorter commitment latency and lower reversibility than systems
+trained with calibrated uncertainty objectives.
+
+\paragraph{P3. Training topology determines $d_\mathrm{cog}$, not only accuracy.}
+Two systems trained to the same behavioral accuracy on a grounding task
+but under different training topologies (different sequences or
+distributions of sensory exposures) will differ in $d_\mathrm{cog}$
+relative to a reference grounding.
+\emph{Measurement}: Train two models on matched accuracy targets but
+with early vs.\ late presentation of informative stimuli (manipulating
+premature overwrite rate); measure $d_\mathrm{cog}$ via RSA against a
+fully-informed reference model.
+\emph{Prediction}: Models exposed to early informative stimuli
+(high premature overwrite risk) will show higher $d_\mathrm{cog}$
+despite matched accuracy.
+
+% ============================================================
+\section{Implications}
+% ============================================================
+
+\subsection{Cross-Species Concept Attribution}
+
+Behavioral experiments establish that an organism has learned a rule
+(\textsc{same}, \textsc{different}, \textsc{zero}) under specific
+training conditions.
+The grounding map $G$ is formed through this training history.
+If training conditions are informationally impoverished relative to
+the full structure of the concept, the grounding-induced topology
+$\tau_A$ will reflect the training experience rather than the full
+intensional structure.
+
+Two consequences follow.
+First, $d_\mathrm{cog}$ measured in behavioral experiments is a lower
+bound on the true cognitive distance.
+Second, the grounding maps may carry the signature of premature
+abduction---early hypotheses that bias all further sensory
+interpretation.
+
+Cross-species concept commensurability studies should report not only
+behavioral transfer accuracy but also the \emph{training topology}:
+the sequence and informativeness of sensory exposures through which
+the concept was formed.
+
+\subsection{Refining the Critique of Multimodal AI Systems}
+
+The framework provides a more precise diagnostic for AI systems than
+the standard ``grounded vs.\ ungrounded'' binary.
+This is not primarily an argument about AI, but a test case for the
+theory: if the framework is correct, AI systems that lack NAC should
+show predictable patterns of $d_\mathrm{cog}$ elevation relative to
+biological reference groundings.
+
+Adding sensory channels to an AI system does not automatically produce
+a sensory space topologically equivalent to the human sensory space.
+Moreover, current multimodal systems commit to grounding assignments
+via weight updates on each training batch, regardless of whether the
+evidence in that batch is sufficient to determine the correct
+interpretive frame.
+The result is premature overwrite at scale: the model's $\tau_A$
+reflects training distribution artifacts rather than sensory structure.
+
+Current systems also lack a well-defined suspension region.
+We conjecture that contrastive training objectives (e.g., CLIP-style
+alignment) suppress NAC by rewarding confident cross-modal matching
+rather than calibrated uncertainty; this suppression of suspension
+capacity is itself a prediction of the framework (P2) and should be
+tested empirically rather than assumed.
+
+This requires distinguishing two superficially similar states that
+are easy to conflate in current AI systems:
+
+\begin{itemize}
+  \item \textbf{Uncertainty}: the agent's posterior over hypotheses is
+  wide---multiple hypotheses have non-negligible probability.
+  This is a common state in transformer models and does not by itself
+  constitute suspension.
+  \item \textbf{Suspension}: the agent maintains competing hypotheses
+  as active candidates \emph{without triggering frame selection}---
+  the competition is reversible and is maintained across further
+  evidence accumulation rather than resolved by the first confident
+  signal.
+  The operational sign is reversible competition maintained under
+  accumulating evidence, not transient co-activation.
+\end{itemize}
+
+Uncertainty is necessary but not sufficient for suspension in the
+formal sense of Definition~\ref{def:nac}.
+A system that shows wide posteriors but immediately commits as soon as
+any signal tips the balance has low NAC, even if its uncertainty is
+calibrated.
+This distinction determines what attribution graph analysis (P2) would
+actually need to find: not co-activation of competing features per se,
+but sustained, reversible co-activation that persists under continued
+evidence accumulation.
+
+This is a falsifiable prediction: systems with genuine suspension
+capacity should show measurably higher commitment latency and reversal
+rate under ambiguous stimuli than systems without it.
+
+\subsection{Trustworthy AI: Beyond Accuracy}
+
+A trustworthy AI system is not merely one with high accuracy.
+It is one that does not prematurely fix its interpretive frame under
+insufficient evidence.
+We propose the following additional evaluation metrics:
+
+\begin{enumerate}
+  \item \textbf{Premature commitment rate (PCR)}: fraction of overwrite
+        transitions triggered below threshold $\theta^*$.
+  \item \textbf{Overwrite reversibility (OR)}: extent to which a prior
+        overwrite can be undone by subsequent evidence.
+  \item \textbf{Uncertainty retention (UR)}: duration over which the
+        system maintains a suspension state without degradation.
+  \item \textbf{Bias propagation factor (BPF)}: amplification of
+        interpretive bias across successive overwrite cycles.
+\end{enumerate}
+
+% ============================================================
+\section{Open Problems}
+% ============================================================
+
+The framework developed here is a theoretical proposal rather than a
+completed formal theory.
+The claims are advanced as structural hypotheses supported by
+definitional argument and phenomenological evidence from comparative
+cognition.
+Their full generality across cognitive architectures, hypothesis
+classes, and sensory modalities is not established and constitutes
+the primary research obligation of the program.
+
+\begin{description}
+  \item[OP1.] \textbf{Measurement of grounding-induced topology.}
+    How can $\tau_A$ be empirically measured for a biological or
+    artificial system?
+    Candidate approach: representational similarity analysis
+    \cite{kriegeskorte2008} to construct a metric on $\Sigma$ from
+    neural activation patterns, then compare via Gromov--Hausdorff
+    distance.
+
+  \item[OP2.] \textbf{Fiber bundle refinement.}
+    Definition~1 uses the product topology, ignoring cross-modal
+    coupling. A fiber bundle formulation, where the base space captures
+    the dominant modality and fibers capture cross-modal modulation,
+    is more biologically faithful. The \textit{Drosophila} central
+    complex \cite{scheffer2020} provides a concrete test case.
+
+  \item[OP3.] \textbf{Proof of Conjecture~2 (Topological Necessity).}
+    A counterexample would require two agents with topologically
+    inequivalent grounding yet identical relational structure over
+    $\Sigma$.
+
+  \item[OP4.] \textbf{Minimum neuron count for suspended abduction.}
+    The predict-and-correct loop in \textit{C.~elegans} runs in 302
+    neurons. What is the minimum network size to implement a suspension
+    region of depth $m$ for a hypothesis class of size $k$?
+
+  \item[OP5.] \textbf{NAC measurement.}
+    For biological agents: measure commitment latency and reversibility
+    under ambiguous stimuli with varying time pressure.
+    For AI systems: Anthropic's circuit tracing tools
+    \cite{anthropic2025circuit} may reveal whether internal states
+    corresponding to maintained hypothesis competition (suspension)
+    exist in trained models.
+
+  \item[OP6.] \textbf{Formal relationship between NAC and
+    $d_\mathrm{cog}$.}
+    Establish a quantitative relationship between the premature
+    commitment rate of a system and the resulting increase in
+    $d_\mathrm{cog}$ relative to an ideally grounded reference.
+\end{description}
+
+% ============================================================
+\section{Conclusion}
+% ============================================================
+
+Symbol grounding is not a binary property.
+Whether a symbol system is grounded tells us only that some connection
+exists between symbols and sensorimotor states---it tells us nothing
+about the structure of that connection.
+And the structure of that connection is not fixed: it is updated
+through abductive transitions that may preserve or distort the
+grounding-induced topology depending on when commitment is made.
+
+We have introduced two formal tools for making this precise.
+The cognitive distance $d_\mathrm{cog}$ measures the structural gap
+between grounding-induced topologies and provides a continuous measure
+of conceptual commensurability.
+Negative abductive capability (NAC) characterizes the structural
+capacity required to prevent premature topological distortion through
+abductive overwrite.
+
+Together, these tools yield a structural account of reliable cognition:
+a system reliably shares concepts with others if its grounding-induced
+topology matches theirs ($d_\mathrm{cog}$ small), and it maintains
+that match over time by committing to interpretive frames only when
+the evidence base warrants it (NAC sufficient, within the present
+model).
+
+The symbol grounding problem, thirty-six years after its formulation,
+may need to become the \emph{symbol grounding structure problem}---
+and the abduction problem may need to become the \emph{abductive
+dynamics problem}.
+
+\medskip
+\noindent
+\textit{Abduction requires negative capability.
+The power to infer depends on the power to suspend inference.}
+
+% ============================================================
+\section*{Acknowledgments}
+% ============================================================
+
+No funding was received for this work.
+
+% ============================================================
+\appendix
+\section{Formal Construction of Cognitive Distance via Gromov--Hausdorff Theory}
+\label{app:gh-theory}
+
+The formal definition of $d_\mathrm{cog}$ proceeds as follows.
+Let $S(A) = \prod_{i=1}^{k} T_i$ be the sensory space of agent $A$,
+equipped with the product topology from transduction channels $T_i$.
+The grounding map $G: \Sigma \to \mathcal{K}(S(A))$ assigns each symbol
+$\sigma \in \Sigma$ a compact subset of sensory states, endowed with the
+Vietoris topology.
+This induces a topology $\tau_A$ on $\Sigma$: the coarsest topology
+making each $G(\sigma)$ continuous with respect to the Hausdorff metric
+on $\mathcal{K}(S(A))$.
+
+To compare two agents $A$ and $B$, one constructs compatible metrics
+$d^A$ and $d^B$ on $\Sigma$ from $\tau_A$ and $\tau_B$ respectively
+(OP1 in Appendix~\ref{app:gh-theory}), then defines:
+\[
+d_\mathrm{cog}(A, B) = d_{GH}((\Sigma, d^A), (\Sigma, d^B)),
+\]
+where $d_{GH}$ is the Gromov--Hausdorff distance \cite{gromov1981}.
+This yields $d_\mathrm{cog} = 0$ if and only if $(\Sigma, d^A)$ and
+$(\Sigma, d^B)$ are isometric---corresponding to full intensional
+sharing of all concepts in $\Sigma$.
+
+Computing exact Gromov--Hausdorff distances is NP-hard in general
+\cite{memoli2007}.
+The RSA-based operationalization (Remark~\ref{rem:rsa-operationalization})
+provides a tractable proxy: under the assumption that the Pearson
+correlation structure of hidden-state activations approximates the
+relational geometry of $\tau_A$, the second-order RSA correlation
+$\rho_\mathrm{cog}$ serves as an ordinal surrogate for $d_{GH}$.
+The Frobenius surrogate $\hat{d}_\mathrm{cog} = \|D^A - D^B\|_F / n$
+is a computable upper bound on $d_{GH}$ when activation variances are
+comparable across agents, but degrades when one matrix collapses
+(as observed at the final layer of deeply-trained models;
+see Remark~\ref{rem:rsa-operationalization}).
+
+\section{Probe Concept Set}
+\label{app:probe-set}
+
+The following $n = 29$ concepts constitute the fixed probe set $\Sigma$
+used in the RSA operationalization (Remark~\ref{rem:rsa-operationalization}).
+Concepts were selected to span four semantic domains, following the
+cross-domain coverage principle of Kriegeskorte et al.\ \cite{kriegeskorte2008}.
+
+\begin{center}
+\begin{tabular}{ll}
+\hline
+Domain & Concepts \\
+\hline
+Physical / perceptual &
+  cat, dog, apple, fire, water, stone, sky, tree \\
+Abstract &
+  justice, truth, freedom, beauty, number, cause \\
+Relational &
+  same, different, larger, smaller, before, after \\
+Emotional / social &
+  fear, trust, anger, love \\
+Cognitive &
+  belief, doubt, memory, knowledge, inference \\
+\hline
+\end{tabular}
+\end{center}
+
+\noindent
+For each concept $\sigma_i$, activations are elicited using the prompt
+template \texttt{``The concept of \{concept\} is''}, and the mean
+last-layer hidden state over all token positions is recorded as
+$\mathbf{h}^A_i$.
+All implementation details and code are available at
+\url{https://github.com/minamominamoto/grounding-without-reality}.
+
+\section{Toy Model: Bayesian Overwrite and $d_\mathrm{cog}$}
+\label{app:toy-model}
+% ============================================================
+
+We provide a minimal formal instantiation of Propositions~\ref{prop:overwrite}
+and~\ref{prop:bias} in a two-hypothesis Bayesian setting.
+
+\paragraph{Setup.}
+Let $\mathcal{H} = \{h_0, h_1\}$.
+Let $\mathcal{X} = \mathbb{R}^2$ with two regions $\mathcal{X}_0$
+and $\mathcal{X}_1$, associated with $h_0$ and $h_1$ respectively.
+Observations $x_1, x_2, \ldots$ are drawn from a mixture distribution.
+
+\paragraph{Suspension and commitment.}
+The agent performs Bayesian updates while
+$\max_i P(h_i \mid x_1, \ldots, x_t) < \theta^*$.
+At time $t^*$, the first time a hypothesis exceeds $\theta^*$, the
+agent commits: the interpretive frame is set to $p(\cdot \mid h_j)$.
+
+\paragraph{Premature overwrite.}
+If $t^* < t^\dagger$ (the time at which the maximum-likelihood
+hypothesis becomes stable under the full evidence sequence), the
+overwrite is premature.
+
+\paragraph{Bias propagation.}
+After commitment to $h_j$ at $t^*$, the bias for subsequent input
+$x_{t'}$ is:
+\[
+\beta(x_{t'}) = F(R_{t^*})(x_{t'}) - F(R^*)(x_{t'}).
+\]
+For inputs from the non-committed region $\mathcal{X}_{1-j}$,
+$\beta(x_{t'}) \neq 0$ and is not correctable by Bayesian update
+within the committed frame.
+
+\paragraph{Connection to $d_\mathrm{cog}$.}
+When $h_j \neq h^\dagger$ (premature commitment to the wrong
+hypothesis), the committed and ideal topologies are not homeomorphic:
+\[
+d_\mathrm{cog}(A, A^*) = d_{GH}((\Sigma, \tau_A), (\Sigma, \tau^*)) > 0.
+\]
+An agent with NAC remains in suspension until $t \geq t^\dagger$,
+at which point $d_\mathrm{cog}(A, A^*) = 0$.
+
+% ============================================================
+\begin{thebibliography}{99}
+
+\bibitem{harnad1990}
+Harnad, S. (1990).
+The symbol grounding problem.
+\textit{Physica D}, 42(1--3), 335--346.
+
+\bibitem{peirce1903}
+Peirce, C.~S. (1903).
+Pragmatism as a principle and method of right thinking.
+Harvard Lectures on Pragmatism.
+
+\bibitem{harman1965}
+Harman, G. (1965).
+The inference to the best explanation.
+\textit{Philosophical Review}, 74(1), 88--95.
+
+\bibitem{gardenfors2000}
+G\"{a}rdenfors, P. (2000).
+\textit{Conceptual Spaces: The Geometry of Thought}.
+MIT Press.
+
+\bibitem{vietoris1922}
+Vietoris, L. (1922).
+Bereiche zweiter Ordnung.
+\textit{Monatshefte f\"{u}r Mathematik und Physik}, 32, 258--280.
+
+\bibitem{gromov1981}
+Gromov, M. (1981).
+\textit{Structures m\'{e}triques pour les vari\'{e}t\'{e}s
+riemanniennes}.
+Textes Math\'{e}matiques, 1. CEDIC/Fernand Nathan.
+
+\bibitem{keats1817}
+Keats, J. (1817).
+Letter to George and Thomas Keats, 21 December 1817.
+In H.~E. Rollins (Ed.),
+\textit{The Letters of John Keats} (Vol.~1).
+Harvard University Press, 1958.
+
+\bibitem{white1986}
+White, J.~G., Southgate, E., Thomson, J.~N., \& Brenner, S. (1986).
+The structure of the nervous system of the nematode
+\textit{Caenorhabditis elegans}.
+\textit{Philosophical Transactions of the Royal Society B},
+314(1165), 1--340.
+
+\bibitem{bargmann2006}
+Bargmann, C.~I. (2006).
+Chemosensation in \textit{C.~elegans}.
+\textit{WormBook}, 1--29.
+
+\bibitem{scheffer2020}
+Scheffer, L.~K., et al. (2020).
+A connectome and analysis of the adult \textit{Drosophila} central
+brain.
+\textit{eLife}, 9, e57443.
+
+\bibitem{giurfa2001}
+Giurfa, M., Zhang, S., Jenett, A., Menzel, R., \& Srinivasan, M.~V.
+(2001).
+The concepts of ``sameness'' and ``difference'' in an insect.
+\textit{Nature}, 410(6831), 930--933.
+
+\bibitem{howard2018}
+Howard, S.~R., Avargues-Weber, A., Garcia, J.~E., Greentree, A.~D.,
+\& Dyer, A.~G. (2018).
+Numerical ordering of zero in honey bees.
+\textit{Science}, 360(6393), 1124--1126.
+
+\bibitem{howard2019}
+Howard, S.~R., Avargues-Weber, A., Garcia, J.~E., Greentree, A.~D.,
+\& Dyer, A.~G. (2019).
+Surpassing the subitizing threshold: appetitive--aversive conditioning
+improves discrimination of numerosities in honeybees.
+\textit{Journal of Experimental Biology}, 222(19), jeb205658.
+
+\bibitem{riley2005}
+Riley, J.~R., Greggers, U., Smith, A.~D., Reynolds, D.~R., \&
+Menzel, R. (2005).
+The flight paths of honeybees recruited by the waggle dance.
+\textit{Nature}, 435(7039), 205--207.
+
+\bibitem{kriegeskorte2008}
+Kriegeskorte, N., Mur, M., \& Bandettini, P. (2008).
+Representational similarity analysis---connecting the branches of
+systems neuroscience.
+\textit{Frontiers in Systems Neuroscience}, 2, 4.
+
+\bibitem{anthropic2025circuit}
+Lindsey, J., et al. (2025).
+Circuit tracing: Revealing computational graphs in language models.
+Anthropic Technical Report.
+\url{https://transformer-circuits.pub/2025/attribution-graphs/methods.html}
+
+\bibitem{ethayarajh2019}
+Ethayarajh, K. (2019).
+How contextual are contextualized word representations?
+Comparing the geometry of {BERT}, {ELMo}, and {GPT-2} embeddings.
+In \textit{Proceedings of the 2019 Conference on Empirical Methods
+in Natural Language Processing} (EMNLP 2019), 55--65.
+
+\bibitem{biderman2023}
+Biderman, S., Schoelkopf, H., Anthony, Q., Bradley, H., Khan, O.,
+Purohit, N., Muennighoff, N., Iyer, S., Zhang, J., Portes, J.,
+DeSantis, T., Pyysalo, S., Gokaslan, A., Martin, J., Phang, J.,
+Gitman, I., Barak, B., Gao, L., \& Leike, J. (2023).
+Pythia: A suite for analyzing large language models across training and
+scaling.
+In \textit{Proceedings of the 40th International Conference on Machine
+Learning} (ICML 2023).
+
+\bibitem{memoli2007}
+M\'emoli, F. (2007).
+On the use of Gromov--Hausdorff distances for shape comparison.
+In \textit{Proceedings of the Symposium on Point-Based Graphics}, 81--90.
+
+\end{thebibliography}
+
+\end{document}

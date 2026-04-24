@@ -1,0 +1,57 @@
+name: Compile LaTeX
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Install TeX Live
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends \
+            texlive-latex-base \
+            texlive-latex-extra \
+            texlive-fonts-recommended \
+            texlive-fonts-extra
+
+      - name: Compile topology_grounding.tex
+        run: |
+          pdflatex -interaction=nonstopmode topology_grounding.tex
+          pdflatex -interaction=nonstopmode topology_grounding.tex
+
+      - name: Compile cgla_grounding.tex
+        run: |
+          pdflatex -interaction=nonstopmode cgla_grounding.tex
+          pdflatex -interaction=nonstopmode cgla_grounding.tex
+
+      - name: Commit compiled PDFs
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add topology_grounding.pdf cgla_grounding.pdf
+          git diff --staged --quiet || git commit -m "Auto-compile PDFs [skip ci]"
+          git push
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload PDFs as artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: papers
+          path: |
+            topology_grounding.pdf
+            cgla_grounding.pdf

@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Topology of Grounding — Minamo Minamoto</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Cormorant+SC:wght@400;600&family=Noto+Serif+JP:wght@300;400&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #1a1814;
+    --ink-mid: #3d3830;
+    --ink-faint: #6b6560;
+    --paper: #f8f5ef;
+    --paper-warm: #f0ece3;
+    --accent: #2a4a6b;
+    --accent-faint: rgba(42,74,107,0.12);
+    --rule: rgba(26,24,20,0.15);
+    --red: #8b2a2a;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: 'Noto Serif JP', 'Cormorant Garamond', Georgia, serif;
+    font-weight: 300;
+    line-height: 1.8;
+    min-height: 100vh;
+  }
+  body::before {
+    content: '';
+    position: fixed; inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 999;
+    opacity: 0.6;
+  }
+  hr { border: none; border-top: 1px solid var(--rule); }
+  header {
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 5rem 2rem 3rem;
+    border-bottom: 1px solid var(--rule);
+  }
+  .eyebrow {
+    font-family: 'Cormorant SC', serif;
+    font-size: 0.68rem;
+    letter-spacing: 0.25em;
+    color: var(--ink-faint);
+    text-transform: uppercase;
+    margin-bottom: 1.4rem;
+  }
+  h1 {
+    font-family: 'Cormorant Garamond', serif;
+    font-weight: 300;
+    font-size: clamp(2.2rem, 5vw, 3.6rem);
+    line-height: 1.12;
+    letter-spacing: -0.01em;
+    color: var(--ink);
+    margin-bottom: 0.5rem;
+  }
+  h1 em { font-style: italic; color: var(--ink-mid); }
+  .subtitle-jp {
+    font-size: 0.95rem;
+    color: var(--ink-faint);
+    letter-spacing: 0.05em;
+    margin-bottom: 1.8rem;
+  }
+  .author-line { display: flex; align-items: center; gap: 1.5rem; flex-wrap: wrap; }
+  .author-name { font-family: 'Cormorant Garamond', serif; font-size: 1.05rem; font-style: italic; }
+  .author-links { display: flex; gap: 1rem; flex-wrap: wrap; }
+  .author-links a {
+    font-family: 'Cormorant SC', serif;
+    font-size: 0.68rem;
+    letter-spacing: 0.15em;
+    color: var(--accent);
+    text-decoration: none;
+    border-bottom: 1px solid var(--accent-faint);
+    padding-bottom: 1px;
+    transition: border-color 0.2s;
+  }
+  .author-links a:hover { border-color: var(--accent); }
+  main { max-width: 860px; margin: 0 auto; padding: 0 2rem 6rem; }
+  .section-label {
+    font-family: 'Cormorant SC', serif;
+    font-size: 0.65rem;
+    letter-spacing: 0.3em;
+    color: var(--ink-faint);
+    text-transform: uppercase;
+    margin: 4rem 0 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+  .section-label::after { content: ''; flex: 1; height: 1px; background: var(--rule); }
+  .abstract { font-size: 1.0rem; color: var(--ink-mid); max-width: 640px; margin-bottom: 0.5rem; }
+  .concepts { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 1.2rem; margin: 1.5rem 0; }
+  .concept-card { background: var(--paper-warm); border: 1px solid var(--rule); padding: 1rem 1.2rem; border-left: 3px solid var(--accent); }
+  .concept-card .term { font-family: 'Cormorant SC', serif; font-size: 0.78rem; letter-spacing: 0.12em; color: var(--accent); display: block; margin-bottom: 0.35rem; }
+  .concept-card p { font-size: 0.82rem; line-height: 1.55; color: var(--ink-mid); }
+  .dep-figure { margin: 2rem 0; text-align: center; }
+  .dep-figure figcaption { font-size: 0.75rem; color: var(--ink-faint); font-style: italic; margin-top: 0.8rem; letter-spacing: 0.03em; }
+  .dep-svg-wrap { display: inline-block; background: var(--paper-warm); border: 1px solid var(--rule); padding: 2rem 2.5rem; }
+  .paper-list { display: flex; flex-direction: column; gap: 0; border-top: 1px solid var(--rule); }
+  .paper-item {
+    display: grid; grid-template-columns: 1fr auto; gap: 1rem; align-items: start;
+    padding: 1.3rem 0; border-bottom: 1px solid var(--rule);
+    opacity: 0; transform: translateY(6px); animation: fadeUp 0.5s forwards;
+  }
+  .paper-item:nth-child(1){animation-delay:.05s}.paper-item:nth-child(2){animation-delay:.10s}
+  .paper-item:nth-child(3){animation-delay:.15s}.paper-item:nth-child(4){animation-delay:.20s}
+  .paper-item:nth-child(5){animation-delay:.25s}.paper-item:nth-child(6){animation-delay:.30s}
+  .paper-item:nth-child(7){animation-delay:.35s}
+  @keyframes fadeUp { to { opacity: 1; transform: none; } }
+  .paper-meta { display: flex; flex-direction: column; gap: 0.2rem; }
+  .paper-title { font-family: 'Cormorant Garamond', serif; font-size: 1.05rem; font-weight: 400; color: var(--ink); text-decoration: none; transition: color 0.2s; }
+  .paper-title:hover { color: var(--accent); }
+  .paper-subtitle { font-size: 0.78rem; color: var(--ink-faint); font-style: italic; letter-spacing: 0.02em; }
+  .paper-key-concept { font-size: 0.72rem; color: var(--accent); font-family: 'Cormorant SC', serif; letter-spacing: 0.1em; margin-top: 0.1rem; }
+  .paper-actions { display: flex; gap: 0.5rem; align-items: flex-start; flex-shrink: 0; padding-top: 0.2rem; }
+  .btn { font-family: 'Cormorant SC', serif; font-size: 0.62rem; letter-spacing: 0.18em; padding: 0.3rem 0.7rem; text-decoration: none; border: 1px solid currentColor; transition: all 0.2s; white-space: nowrap; }
+  .btn-pdf { color: var(--accent); background: transparent; }
+  .btn-pdf:hover { background: var(--accent); color: var(--paper); }
+  .btn-pending { color: var(--ink-faint); border-color: var(--rule); cursor: default; font-style: italic; }
+  .slide-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 0.6rem; margin: 1.5rem 0; }
+  .slide-grid img { width: 100%; display: block; border: 1px solid var(--rule); transition: opacity 0.2s, transform 0.2s; cursor: pointer; }
+  .slide-grid img:hover { opacity: 0.85; transform: scale(1.02); }
+  .slide-note { font-size: 0.76rem; color: var(--ink-faint); font-style: italic; margin-top: 0.5rem; }
+  .stats-row { display: flex; gap: 2.5rem; flex-wrap: wrap; margin: 1rem 0 0.5rem; }
+  .stat { display: flex; flex-direction: column; gap: 0.15rem; }
+  .stat-val { font-family: 'Cormorant Garamond', serif; font-size: 2rem; font-weight: 300; line-height: 1; color: var(--ink); }
+  .stat-label { font-family: 'Cormorant SC', serif; font-size: 0.63rem; letter-spacing: 0.2em; color: var(--ink-faint); }
+  .arxiv-link { display: inline-flex; align-items: center; gap: 0.4rem; font-family: 'Cormorant Garamond', serif; font-size: 0.9rem; font-style: italic; color: var(--accent); text-decoration: none; border-bottom: 1px solid var(--accent-faint); }
+  .arxiv-link:hover { border-color: var(--accent); }
+  footer { max-width: 860px; margin: 0 auto; padding: 2rem 2rem 4rem; border-top: 1px solid var(--rule); display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 1rem; }
+  footer p { font-size: 0.74rem; color: var(--ink-faint); font-style: italic; }
+  footer .colophon { font-family: 'Cormorant SC', serif; font-size: 0.62rem; letter-spacing: 0.2em; color: var(--ink-faint); }
+  #lightbox { display: none; position: fixed; inset: 0; background: rgba(26,24,20,0.92); z-index: 1000; align-items: center; justify-content: center; cursor: zoom-out; }
+  #lightbox.open { display: flex; }
+  #lightbox img { max-width: 90vw; max-height: 90vh; border: 1px solid rgba(255,255,255,0.1); }
+</style>
+</head>
+<body>
+
+<header>
+  <p class="eyebrow">Working Papers in Formal Cognitive Science &amp; AI Theory</p>
+  <h1>Topology of <em>Grounding</em></h1>
+  <p class="subtitle-jp">接地の位相論的形式化　—　フレーム・アブダクション・蓄積</p>
+  <div class="author-line">
+    <span class="author-name">Minamo Minamoto　みなもと みなも</span>
+    <nav class="author-links">
+      <a href="https://github.com/minamominamoto/topology-of-grounding" target="_blank">GitHub</a>
+      <a href="https://orcid.org/0009-0002-1201-5704" target="_blank">ORCID</a>
+      <a href="https://zenn.dev/minamominamoto" target="_blank">Zenn</a>
+      <a href="https://arxiv.org/abs/2603.29127" target="_blank">arXiv</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+
+  <p class="section-label">Overview</p>
+  <p class="abstract">
+    This repository collects a series of working papers on the formal structure of grounding in cognitive and artificial systems.
+    The central thesis: <em>hallucination is not a calibration failure but a frame misactivation</em>—
+    a structural diagnosis with implications for both interpretability and the design of abductive capacity in language models.
+    Papers build on a shared architecture of NAC (Negative Abductive Capability), SSC (Selection Stability Coefficient),
+    and the Interpretive Stack as a model of non-destructive frame accumulation.
+  </p>
+
+  <p class="section-label">Key Concepts</p>
+  <div class="concepts">
+    <div class="concept-card">
+      <span class="term">NAC</span>
+      <p>Negative Abductive Capability — the ability to <em>withhold</em> commitment before frame selection consolidates.</p>
+    </div>
+    <div class="concept-card">
+      <span class="term">SSC</span>
+      <p>Selection Stability Coefficient — post-commitment frame coherence, defined independently of task specification T.</p>
+    </div>
+    <div class="concept-card">
+      <span class="term">Interpretive Stack</span>
+      <p>Frames are never deleted; suppressed frames are archived and remain accessible for re-activation.</p>
+    </div>
+    <div class="concept-card">
+      <span class="term">Alternative-Frame Index</span>
+      <p>The indexing structure over archived frames; enables structured revision without abductive regression.</p>
+    </div>
+    <div class="concept-card">
+      <span class="term">Frame Misactivation</span>
+      <p>Hallucination reframed as incorrect frame selection — not noise, but a deterministic structural error.</p>
+    </div>
+  </div>
+
+  <p class="section-label">Paper Dependency Structure</p>
+  <figure class="dep-figure">
+    <div class="dep-svg-wrap">
+      <svg width="560" height="280" viewBox="0 0 560 280" font-family="'Cormorant Garamond', Georgia, serif" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <marker id="arr" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto">
+            <path d="M0,0 L7,3.5 L0,7 Z" fill="#2a4a6b" opacity="0.6"/>
+          </marker>
+        </defs>
+        <rect x="30" y="30" width="200" height="54" fill="none" stroke="#2a4a6b" stroke-width="1.2"/>
+        <text x="130" y="50" text-anchor="middle" font-size="11" fill="#2a4a6b" letter-spacing="1">ABDUCTION OVERWRITE</text>
+        <text x="130" y="67" text-anchor="middle" font-size="10" fill="#6b6560" font-style="italic">NAC — Negative Abductive Capability</text>
+        <rect x="330" y="30" width="200" height="54" fill="none" stroke="#2a4a6b" stroke-width="1.2"/>
+        <text x="430" y="50" text-anchor="middle" font-size="11" fill="#2a4a6b" letter-spacing="1">ABDUCTIVE ACCUMULATION</text>
+        <text x="430" y="67" text-anchor="middle" font-size="10" fill="#6b6560" font-style="italic">SSC, Interpretive Stack</text>
+        <rect x="30" y="158" width="200" height="54" fill="none" stroke="#3d3830" stroke-width="0.8"/>
+        <text x="130" y="178" text-anchor="middle" font-size="11" fill="#3d3830" letter-spacing="1">TOPOLOGY GROUNDING</text>
+        <text x="130" y="196" text-anchor="middle" font-size="10" fill="#6b6560" font-style="italic">Topological formalization</text>
+        <rect x="250" y="158" width="180" height="54" fill="none" stroke="#3d3830" stroke-width="0.8"/>
+        <text x="340" y="178" text-anchor="middle" font-size="11" fill="#3d3830" letter-spacing="1">HALLUCINATION FRAMING</text>
+        <text x="340" y="196" text-anchor="middle" font-size="10" fill="#6b6560" font-style="italic">Frame misactivation taxonomy</text>
+        <rect x="450" y="158" width="80" height="54" fill="none" stroke="#8b2a2a" stroke-width="0.8" stroke-dasharray="4,2"/>
+        <text x="490" y="178" text-anchor="middle" font-size="10" fill="#8b2a2a" letter-spacing="0.5">COMPACTION</text>
+        <text x="490" y="195" text-anchor="middle" font-size="10" fill="#8b2a2a" font-style="italic">pending</text>
+        <rect x="30" y="240" width="200" height="32" fill="none" stroke="#3d3830" stroke-width="0.8"/>
+        <text x="130" y="260" text-anchor="middle" font-size="11" fill="#3d3830" letter-spacing="1">CGLA GROUNDING</text>
+        <path d="M130,84 L130,110 L340,110 L340,158" stroke="#2a4a6b" stroke-width="1" fill="none" opacity="0.5" marker-end="url(#arr)"/>
+        <path d="M430,84 L430,110 L340,110" stroke="#2a4a6b" stroke-width="1" fill="none" opacity="0.5"/>
+        <path d="M490,84 L490,158" stroke="#2a4a6b" stroke-width="1" fill="none" opacity="0.5" marker-end="url(#arr)"/>
+        <path d="M430,158 L490,158" stroke="#3d3830" stroke-width="0.8" fill="none" opacity="0.4" marker-end="url(#arr)"/>
+        <path d="M130,212 L130,240" stroke="#3d3830" stroke-width="0.8" fill="none" opacity="0.4" marker-end="url(#arr)"/>
+        <line x1="30" y1="260" x2="50" y2="260" stroke="#2a4a6b" stroke-width="1.2"/>
+        <text x="55" y="263" font-size="9" fill="#6b6560">primary dependency</text>
+        <line x1="150" y1="260" x2="170" y2="260" stroke="#8b2a2a" stroke-width="0.8" stroke-dasharray="3,2"/>
+        <text x="175" y="263" font-size="9" fill="#8b2a2a">pending endorsement</text>
+      </svg>
+    </div>
+    <figcaption>Logical dependency graph of the working paper series</figcaption>
+  </figure>
+
+  <p class="section-label">Papers</p>
+  <div class="paper-list">
+    <div class="paper-item">
+      <div class="paper-meta">
+        <a class="paper-title" href="https://github.com/minamominamoto/topology-of-grounding/raw/main/topology_grounding.pdf" target="_blank">Topological Formalization of Grounding</a>
+        <span class="paper-subtitle">topology_grounding.pdf</span>
+        <span class="paper-key-concept">Foundational Framework</span>
+      </div>
+      <div class="paper-actions">
+        <a class="btn btn-pdf" href="https://github.com/minamominamoto/topology-of-grounding/raw/main/topology_grounding.pdf" target="_blank">PDF</a>
+        <a class="btn btn-pdf" href="https://zenn.dev/minamominamoto/articles/7fcb98df37a2d0" target="_blank" style="font-size:0.58rem;letter-spacing:0.08em;">記号接地はバイナリではない</a>
+      </div>
+    </div>
+    <div class="paper-item">
+      <div class="paper-meta">
+        <a class="paper-title" href="https://github.com/minamominamoto/topology-of-grounding/raw/main/cgla_grounding.pdf" target="_blank">Cognitive-Linguistic-Action Grounding Model</a>
+        <span class="paper-subtitle">cgla_grounding.pdf — 認知・言語・行為接地モデル</span>
+        <span class="paper-key-concept">CGLA Architecture</span>
+      </div>
+      <div class="paper-actions">
+        <a class="btn btn-pdf" href="https://github.com/minamominamoto/topology-of-grounding/raw/main/cgla_grounding.pdf" target="_blank">PDF</a>
+        <a class="btn btn-pdf" href="https://zenn.dev/minamominamoto/articles/fdc96dc3471d56" target="_blank" style="font-size:0.58rem;letter-spacing:0.08em;">AIの「理解」をハードウェアが縛る理由</a>
+      </div>
+    </div>
+    <div class="paper-item">
+      <div class="paper-meta">
+        <a class="paper-title" href="https://github.com/minamominamoto/topology-of-grounding/raw/main/abduction_overwrite.pdf" target="_blank">Abduction Overwrite: Negative Abductive Capability</a>
+        <span class="paper-subtitle">abduction_overwrite.pdf — NAC の形式化</span>
+        <span class="paper-key-concept">NAC — Pre-Commitment Suspension</span>
+      </div>
+      <div class="paper-actions">
+        <a class="btn btn-pdf" href="https://github.com/minamominamoto/topology-of-grounding/raw/main/abduction_overwrite.pdf" target="_blank">PDF</a>
+        <a class="btn btn-pdf" href="https://zenn.dev/minamominamoto/articles/2dc50018be90e2" target="_blank" style="font-size:0.58rem;letter-spacing:0.08em;">推論の力は保留する力に依存する</a>
+      </div>
+    </div>
+    <div class="paper-item">
+      <div class="paper-meta">
+        <a class="paper-title" href="https://github.com/minamominamoto/topology-of-grounding/raw/main/abductive_accumulation.pdf" target="_blank">Abductive Accumulation: SSC and the Interpretive Stack</a>
+        <span class="paper-subtitle">abductive_accumulation.pdf — 選択安定性・フレーム蓄積</span>
+        <span class="paper-key-concept">SSC · Interpretive Stack</span>
+      </div>
+      <div class="paper-actions">
+        <a class="btn btn-pdf" href="https://github.com/minamominamoto/topology-of-grounding/raw/main/abductive_accumulation.pdf" target="_blank">PDF</a>
+        <a class="btn btn-pdf" href="https://zenn.dev/minamominamoto/articles/9f4f6f7b85a698" target="_blank" style="font-size:0.58rem;letter-spacing:0.08em;">エラーは消え去らない。ただ抑圧されるのみ</a>
+      </div>
+    </div>
+    <div class="paper-item">
+      <div class="paper-meta">
+        <a class="paper-title" href="https://github.com/minamominamoto/topology-of-grounding/raw/main/hallucination_framing.pdf" target="_blank">Hallucination as Frame Misactivation: A Structural Taxonomy</a>
+        <span class="paper-subtitle">hallucination_framing.pdf — ハルシネーション＝フレーム誤作動</span>
+        <span class="paper-key-concept">Frame Misactivation Taxonomy</span>
+      </div>
+      <div class="paper-actions">
+        <a class="btn btn-pdf" href="https://github.com/minamominamoto/topology-of-grounding/raw/main/hallucination_framing.pdf" target="_blank">PDF</a>
+        <a class="btn btn-pdf" href="https://zenn.dev/minamominamoto/articles/29cd175e4a2940" target="_blank" style="font-size:0.58rem;letter-spacing:0.08em;">ハルシネーションの構造的解明</a>
+      </div>
+    </div>
+    <div class="paper-item">
+      <div class="paper-meta">
+        <a class="paper-title" href="https://github.com/minamominamoto/topology-of-grounding/raw/main/ai_accumulation_note.pdf" target="_blank">AI Accumulation Note</a>
+        <span class="paper-subtitle">ai_accumulation_note.pdf — AI蓄積ノート</span>
+        <span class="paper-key-concept">Extended Commentary</span>
+      </div>
+      <div class="paper-actions">
+        <a class="btn btn-pdf" href="https://github.com/minamominamoto/topology-of-grounding/raw/main/ai_accumulation_note.pdf" target="_blank">PDF</a>
+        <a class="btn btn-pdf" href="https://zenn.dev/minamominamoto/articles/961dee045ec26e" target="_blank" style="font-size:0.58rem;letter-spacing:0.08em;">ファインチューニングは修正ではない</a>
+      </div>
+    </div>
+    <div class="paper-item">
+      <div class="paper-meta">
+        <a class="paper-title" href="https://github.com/minamominamoto/topology-of-grounding/raw/main/parus_minor_metric_grounding.pdf" target="_blank">Behavioral Equivalence Without Representational Equivalence</a>
+        <span class="paper-subtitle">parus_minor_metric_grounding.pdf — Parus minor コミュニケーションとメトリック接地</span>
+        <span class="paper-key-concept">Case Study · RSA Prediction · math.CO (arXiv pending)</span>
+      </div>
+      <div class="paper-actions"><a class="btn btn-pdf" href="https://github.com/minamominamoto/topology-of-grounding/raw/main/parus_minor_metric_grounding.pdf" target="_blank">PDF</a></div>
+    </div>
+    <div class="paper-item">
+      <div class="paper-meta">
+        <span class="paper-title" style="cursor:default;">Alternative-Frame Index: Compaction Commentary</span>
+        <span class="paper-subtitle">compaction_commentary.pdf — arXiv endorsement待ち</span>
+        <span class="paper-key-concept" style="color:var(--red);">Awaiting arXiv Endorsement</span>
+      </div>
+      <div class="paper-actions">
+        <a class="btn btn-pdf" href="https://github.com/minamominamoto/topology-of-grounding/raw/main/compaction_commentary.pdf" target="_blank">PDF</a>
+      </div>
+    </div>
+  </div>
+
+  <p class="section-label">Related Work</p>
+  <p class="abstract">
+    Ongoing work in extremal graph theory: lower bounds for C₄-free subgraphs of hypercubes Q₇ and Q₈,
+    combining ILP, simulated annealing, and SAT encoding approaches.
+  </p>
+  <br>
+  <a class="arxiv-link" href="https://arxiv.org/abs/2603.29127" target="_blank">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+    arXiv:2603.29127 — New Lower Bounds for C₄-Free Subgraphs of Q₇ and Q₈
+  </a>
+
+  <p class="section-label">Presentation Slides <span style="font-style:italic;font-size:0.8em;letter-spacing:0">(The Topology of Symbol Grounding)</span></p>
+  <div class="slide-grid" id="slideGrid"></div>
+  <p class="slide-note">13 slides — click to enlarge. Full article at <a href="https://zenn.dev/minamominamoto" target="_blank" style="color:var(--accent)">zenn.dev/minamominamoto</a>.</p>
+
+  <p class="section-label">Repository Activity <span style="font-style:italic;font-size:0.8em;letter-spacing:0">(14-day window)</span></p>
+  <div class="stats-row">
+    <div class="stat"><span class="stat-val" id="clones">392</span><span class="stat-label">Clones</span></div>
+    <div class="stat"><span class="stat-val" id="unique">195</span><span class="stat-label">Unique Cloners</span></div>
+    <div class="stat"><span class="stat-val" id="views">—</span><span class="stat-label">Views (14d)</span></div>
+    <div class="stat"><span class="stat-val">8</span><span class="stat-label">Papers Published</span></div>
+  </div>
+
+</main>
+
+<footer>
+  <p>All papers are working drafts. Correspondence: see ORCID profile.</p>
+  <span class="colophon">topology-of-grounding · Minamo Minamoto · 2026</span>
+</footer>
+
+<div id="lightbox" onclick="this.classList.remove('open')">
+  <img id="lbImg" src="" alt="Slide enlarged">
+</div>
+
+<script>
+  const slides = [
+    '3abf1a14c6f8-20260415', // J-01
+    'db2747e4c2fe-20260415', // J-02
+    '054275d71bf8-20260415', // J-03
+    'fdb7d6524855-20260415', // J-04
+    '5ee8ce9becfc-20260415', // J-05
+    'df5b7a0c15bd-20260415', // J-06
+    'bb2187730c3b-20260415', // J-07
+    'e20833939b0b-20260415', // J-08
+    '9e43513ef41f-20260415', // J-09
+    '7ff63f688e63-20260415', // J-10
+    'fb1d0d9d93df-20260415', // J-11
+    'bde067c22eb9-20260415', // J-12
+    '2699d78919f2-20260415', // J-13
+  ];
+  const base = 'https://storage.googleapis.com/zenn-user-upload/';
+  const grid = document.getElementById('slideGrid');
+
+  slides.forEach((slug, i) => {
+    const img = document.createElement('img');
+    img.src = base + slug + '.png';
+    img.alt = 'Slide ' + (i + 1);
+    img.loading = 'lazy';
+    img.onclick = function() {
+      document.getElementById('lbImg').src = this.src;
+      document.getElementById('lightbox').classList.add('open');
+    };
+    grid.appendChild(img);
+  });
+</script>
+
+</body>
+</html>

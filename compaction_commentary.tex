@@ -1,0 +1,367 @@
+\documentclass[12pt]{article}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{geometry}
+\usepackage{hyperref}
+\usepackage{natbib}
+\usepackage{enumerate}
+\geometry{margin=1in}
+
+\newtheorem{definition}{Definition}
+\newtheorem{proposition}{Proposition}
+\newtheorem{remark}{Remark}
+
+\title{What Survives Compaction?\\
+On the Missing Principle Behind Context Compression\\
+in Reasoning Models}
+
+\author{Minamo Minamoto\\
+\small Independent\\
+\small ORCID: 0009-0002-1201-5704\\
+\small \href{https://github.com/minamominamoto/topology-of-grounding}{topology-of-grounding}
+}
+
+\date{April 2026}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+Recent work on context compression for reasoning models---most notably
+Memento \citep{kontonis2026memento}---has demonstrated that large language
+models can learn to segment their chain-of-thought, compress each segment
+into a dense summary, and reason forward from summaries alone, achieving
+2--3$\times$ KV cache reduction with minimal accuracy loss on in-distribution
+benchmarks. We argue that this technical achievement raises a question that
+engineering metrics alone cannot answer: \emph{what should survive
+compaction, and why?} Current compression approaches optimize for accuracy
+preservation on downstream benchmarks, treating compaction as a performance
+engineering problem. We propose that this framing is structurally incomplete.
+Drawing on the interpretive stack model of cognition
+\citep{minamoto2026overwrite,minamoto2026accum}, we argue that compaction is
+fundamentally a frame-selection problem: the compression operation implicitly
+decides which interpretive frames are foregrounded and which are archived.
+Without a principled account of this decision, compaction risks
+systematically suppressing minority frames that are essential for error
+correction under distributional shift, while amplifying the dominant frame
+regardless of its appropriateness to the current reasoning context.
+We propose three principles for SSC-aware compression and discuss their
+implications for the design of Memento-style, LightThinker++, and
+neural-computer architectures.
+\end{abstract}
+
+\section{Introduction}
+
+Context compression for reasoning models addresses a genuine engineering
+challenge: chain-of-thought reasoning generates long intermediate sequences
+that consume KV cache, increase inference latency, and scale poorly with
+problem depth. Memento \citep{kontonis2026memento} addresses this by training
+models to segment their reasoning and replace each completed segment with a
+compact summary (``memento''), from which subsequent reasoning proceeds.
+The approach is technically elegant and achieves impressive compression
+ratios with minimal benchmark degradation.
+
+We do not dispute the technical contribution. We argue, however, that the
+framing of compaction as a performance engineering problem---optimize
+compression ratio subject to accuracy constraints---misses a structural
+question that has consequences for the robustness of compressed systems
+under distribution shift.
+
+The question is: what should survive compaction?
+
+Current systems implicitly answer: whatever maximizes accuracy on held-out
+test sets from the same distribution as training. We argue this answer is
+insufficient because it conflates task-accurate compression with
+\emph{cognitively safe} compression. The two can diverge precisely in the
+situations where compression matters most: long, complex reasoning chains
+that approach or exceed the model's in-context capacity, and that may
+involve reasoning under uncertainty where multiple interpretive frames are
+relevant.
+
+
+\begin{remark}[Terminological note on ``overwrite'']
+See \cite{minamoto2026overwrite} for the precise definition.
+In this paper, \emph{overwrite} denotes a frame-dominant transition
+(superposition $+$ selection-dominance), not deletion of prior frames.
+\end{remark}
+
+\section{The Interpretive Stack Model: Brief Summary}
+
+We summarize the relevant framework from \citet{minamoto2026overwrite,minamoto2026accum};
+readers familiar with these papers may skip to Section~3.
+
+\begin{definition}[Interpretive Frame]
+An interpretive frame $F$ is a function from inputs to outputs induced
+by a specific configuration of a language model's weight space---
+operationally, a cluster of circuits whose causal contribution to output
+is coherent across a class of inputs.
+\end{definition}
+
+\begin{definition}[Interpretive Stack]
+An interpretive stack $L = (F_1, F_2, \ldots, F_n)$ is an ordered
+sequence of interpretive frames implicitly encoded in the model's weight
+space. $F_1$ is the most recently installed or highest-priority frame.
+Earlier frames are residual structures from pretraining or prior
+fine-tuning stages.
+\end{definition}
+
+\begin{definition}[Selection Stability Capacity (SSC)]
+A model exhibits Selection Stability Capacity with respect to a target
+frame $F^*$ if the selection rule $S$ assigns $F^*$ across the full
+distribution of intended input contexts. SSC failure occurs when $S$
+activates a frame $F_k \neq F^*$ for some input in the intended distribution.
+\end{definition}
+
+The central claim of \citet{minamoto2026accum} is that prior interpretive
+frames are not overwritten by fine-tuning but archived: they remain
+accessible and may be reactivated under appropriate conditions. SSC
+measures the model's ability to maintain the correct frame despite the
+presence of archived alternative frames.
+
+\section{Compaction as a Frame-Selection Problem}
+
+When a compressor summarizes a reasoning block, it necessarily selects
+what to preserve. In the absence of an explicit principle, this selection
+is determined by the compressor's training signal---accuracy on
+in-distribution follow-up tasks.
+
+We argue this training signal systematically biases compression toward
+preserving the dominant frame's conclusions while discarding information
+about alternative frames that were considered and provisionally rejected.
+The result is a memento that encodes the correct answer for in-distribution
+inputs but loses the structural information needed to recover when the
+subsequent reasoning context shifts to a regime where the suppressed
+alternative frame would be more appropriate.
+
+This is not a hypothetical concern. It is the structural consequence of
+optimizing compression on i.i.d.\ held-out benchmarks: if the training
+distribution is well-covered by the dominant frame, the compressor will
+never receive a gradient signal to preserve alternative-frame indices,
+because those indices are never needed on training inputs.
+
+\section{Three Principles for SSC-Aware Compression}
+
+We propose three principles that a compaction approach should satisfy to
+be cognitively safe.
+
+\textbf{Principle 1: Conclusion preservation (existing).}
+The compressed representation should encode the conclusion reached at
+the end of the compressed block. This is what Memento already does, and
+it correctly captures the minimal information needed for in-distribution
+continuation.
+
+\textbf{Principle 2: Alternative-frame index preservation (missing).}
+The compressed representation should encode, for each alternative frame
+that was considered and rejected during the compressed block:
+\begin{enumerate}[(i)]
+\item The identity of the alternative frame (or a compact representation
+  of its acquisition context);
+\item The condition under which it was rejected (the evidence that
+  favored the dominant frame);
+\item The trigger conditions under which it should be re-evaluated
+  (input features that would shift the balance of evidence).
+\end{enumerate}
+
+This index is typically much smaller than the full frame content.
+Preserving it does not require storing the alternative frame's full
+reasoning trace---only the information needed to decide whether to
+re-activate it.
+
+\textbf{Principle 3: SSC-aware compression evaluation (missing).}
+Compression quality should be evaluated not only on task accuracy under
+the training distribution but on Selection Stability Capacity: the
+compressed state's ability to maintain the correct frame under
+distributional shift. A memento that achieves high accuracy on
+in-distribution follow-up blocks but low SSC is brittle.
+
+Operationally, SSC-aware evaluation would require:
+\begin{enumerate}[(i)]
+\item Deliberately perturbing follow-up reasoning contexts to resemble
+  the acquisition context of the suppressed alternative frame.
+\item Measuring whether the compressed model correctly maintains the
+  dominant frame or erroneously reverts to the suppressed frame.
+\item Using this measurement as an additional compression quality signal
+  during compressor training.
+\end{enumerate}
+
+\section{Relation to LightThinker++, Neural Computer, and Thinking Mid-Training}
+
+LightThinker++ \citep{lightthinkerplusplus2026} introduces three explicit
+memory operations: Commit, Expand, and Fold. The Expand operation implicitly
+acknowledges that archived content may need retrieval. However,
+LightThinker++ does not address what should be archived beyond
+task-relevant intermediate results. Under the interpretive stack model,
+the Expand operation is insufficient if the archived content did not
+include alternative-frame indices: expanding a memento that encodes only
+the dominant frame's conclusion cannot recover the suppressed alternative.
+
+The Neural Computer paradigm \citep{neuralcomputer2026} collapses
+computation, memory, and I/O into a single latent runtime state.
+This is architecturally elegant but does not resolve the frame-selection
+problem---it relocates it to the question of what the latent state encodes.
+The same compaction principle applies.
+
+Meta FAIR's thinking mid-training approach \citep{lanchantin2026midtraining}
+inserts an intermediate SFT+RL phase between pretraining and post-training,
+achieving a 3.2$\times$ improvement in reasoning performance. The
+interpretive stack model offers a structural explanation for this result:
+mid-training installs a richer stack of interpretive frames before
+post-training begins, increasing SSC at the time of post-training.
+When post-training operates on a model with higher SSC, the resulting
+fine-tuned frame is more stable under distributional shift.
+Conversely, post-training without mid-training operates on a shallow
+stack, producing a dominant frame with low SSC---the frame activates
+correctly on i.i.d.\ inputs but fails under the modest perturbations
+that mid-training examples provide.
+
+This explanation connects the compaction problem to the training pipeline:
+a system that enters compaction with high SSC (due to mid-training) will
+produce mementos that are more structurally complete, because the model's
+reasoning will more regularly surface alternative-frame considerations
+rather than immediately collapsing to the dominant-frame conclusion.
+
+\section{Implications for Compressor Design}
+
+The three principles above suggest concrete modifications to Memento-style
+training.
+
+\textbf{Training signal augmentation.}
+Add an auxiliary loss that penalizes mementos that fail to predict,
+from the compressed representation alone, what alternative frames were
+considered and why they were rejected. This does not require human
+annotation: the uncompressed chain-of-thought contains this information,
+and the compressor can be trained to preserve it via self-supervised
+objectives.
+
+\textbf{SSC-perturbed evaluation.}
+Include in the evaluation suite a set of follow-up reasoning contexts
+deliberately constructed to resemble the acquisition contexts of
+alternative frames that appeared in the compressed blocks. Mementos
+that fail on these perturbed contexts should receive lower quality scores
+regardless of their in-distribution accuracy.
+
+\textbf{Stack-aware compression architectures.}
+Rather than training a single compressor for all reasoning steps,
+train separate compressors for steps at different stack depths
+(early in reasoning, when multiple frames are still live, vs.\ late,
+when commitment has occurred). Early-step compressors should be trained
+with stronger alternative-frame index preservation objectives.
+
+\section{Measuring What Survives: An RSA-Based Pilot}
+\label{sec:pilot}
+
+Principles 2 and 3 require measuring whether alternative-frame
+information survives compaction.
+We demonstrate that RSA provides a tractable proxy for this
+measurement.
+
+\paragraph{Setup.}
+If compaction is a frame-selection operation, then the relational
+geometry of the compressed state should reflect which frames survived.
+We operationalize this by computing pairwise dissimilarity matrices
+$D_{ij} = 1 - \mathrm{corr}(\mathbf{h}_i, \mathbf{h}_j)$ over
+$n = 29$ probe concepts at hidden layers of Pythia-70m
+\citep{biderman2023} across three training stages: random
+initialization (step~0), early training (step~1000), and fully
+trained reference (step~143000).
+The second-order Spearman correlation $\rho_\mathrm{cog}$ between
+checkpoint pairs measures how much structural information is retained
+as training progresses.
+
+\paragraph{Results.}
+$\rho_\mathrm{cog}$ increases monotonically with training
+(L6: step-0 $= 0.017$; step-1000 $= 0.535$), indicating that
+training progressively accumulates relational structure.
+Crucially, step-0 is not structurally uncorrelated with the
+trained reference---early structure persists rather than being
+deleted, consistent with the interpretive stack model.
+Cross-model comparison (GPT-2 vs.\ Pythia-trained:
+$\rho_\mathrm{cog} \approx 0.42$; vs.\ Pythia-step-0:
+$\rho_\mathrm{cog} \approx 0.10$) demonstrates that the
+protocol discriminates structurally distinct representations.
+
+\paragraph{Relevance to Principle 3.}
+Applied to context compression, the same protocol provides
+an operationalization of SSC-aware evaluation (Principle 3).
+Given a compressed memento $m_t$, one can compute the RSA
+dissimilarity matrix of the model conditioned on $m_t$
+and compare it to the matrix conditioned on the full
+uncompressed context.
+A high $\rho_\mathrm{cog}$ indicates that the compression
+preserved the relational geometry of the active frames;
+a low $\rho_\mathrm{cog}$---especially for concepts
+associated with the suppressed alternative frame---indicates
+that alternative-frame index information has been lost.
+This provides a quantitative signal for the auxiliary loss
+proposed in Section~5 without requiring human annotation.
+All code is available at
+\url{https://github.com/minamominamoto/grounding-without-reality}.
+
+\section{Conclusion}
+
+Context compression is a necessary engineering capability for reasoning
+models operating under resource constraints. Memento and related approaches
+demonstrate that significant compression ratios are achievable with
+acceptable accuracy loss on in-distribution benchmarks. We have argued
+that this success is accompanied by a structural risk: compression
+optimized on i.i.d.\ accuracy systematically discards the alternative-frame
+indices that enable robust reasoning under distributional shift.
+
+The resolution requires not a change to the compression architecture but
+a change to the evaluation criterion and training objective: compressors
+should be trained and evaluated not only on conclusion-preservation accuracy
+but on SSC---the stability of frame selection under the perturbations that
+characterize out-of-distribution reasoning contexts.
+
+The three principles proposed here (conclusion preservation, alternative-frame
+index preservation, and SSC-aware evaluation) are not technically demanding
+in isolation. Their implementation requires primarily a richer theory of
+what counts as important to preserve---a question that current engineering
+metrics are not equipped to answer.
+
+\bibliographystyle{plainnat}
+\begin{thebibliography}{10}
+
+\bibitem[Kontonis et al.(2026)]{kontonis2026memento}
+Kontonis, V., et al. (2026).
+Memento: Teaching LLMs to manage their own context for long-horizon
+reasoning.
+arXiv preprint.
+
+\bibitem[LightThinker++(2026)]{lightthinkerplusplus2026}
+LightThinker++ Team (2026).
+LightThinker++: Commit, Expand, Fold for efficient reasoning.
+arXiv preprint.
+
+\bibitem[Neural Computer(2026)]{neuralcomputer2026}
+Neural Computer Team (2026).
+Neural Computer: Collapsing computation, memory, and I/O.
+arXiv preprint.
+
+\bibitem[Lanchantin et al.(2026)]{lanchantin2026midtraining}
+Lanchantin, J., et al. (2026).
+Thinking LLMs: General instruction following with thought generation
+via mid-training.
+arXiv:2601.21343.
+
+\bibitem[Minamoto(2026a)]{minamoto2026overwrite}
+Minamoto, M. (2026a).
+Abduction as overwrite: Negative abductive capability as a structural
+condition for reliable inference.
+Preprint.
+\url{https://github.com/minamominamoto/topology-of-grounding}
+
+\bibitem[Minamoto(2026b)]{minamoto2026accum}
+Minamoto, M. (2026b).
+Abductive accumulation: Why interpretive frames persist and how
+selection stability determines cognitive reliability.
+Preprint.
+\url{https://github.com/minamominamoto/topology-of-grounding}
+
+\bibitem[Biderman et al.(2023)]{biderman2023}
+Biderman, S., et al.\ 2023.
+Pythia: A suite for analyzing large language models across training and scaling.
+\textit{Proceedings of ICML 2023}.
+
+\end{thebibliography}
+
+\end{document}

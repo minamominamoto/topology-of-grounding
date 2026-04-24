@@ -1,0 +1,514 @@
+\documentclass[12pt]{article}
+
+% arXiv categories: cs.AI cs.LG
+\usepackage{amsmath, amssymb, amsthm}
+\usepackage{geometry}
+\usepackage{cite}
+\usepackage{enumitem}
+\usepackage{hyperref}
+
+\geometry{margin=1in}
+
+\newtheorem{definition}{Definition}
+\newtheorem{proposition}{Proposition}
+\newtheorem{remark}{Remark}
+\newtheorem{corollary}{Corollary}
+
+\title{Fine-Tuning Does Not Correct: Abductive Accumulation\\
+and the Persistence of Prior Frames in Neural Systems}
+
+\author{Minamo Minamoto\\
+\small Independent\\
+\small \texttt{minamominamoto4f5683f6@gmail.com}\\
+\small \texttt{https://orcid.org/0009-0002-1201-5704}}
+
+\date{April 2026}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+The standard account of fine-tuning treats it as correction: a new
+training distribution overwrites prior model behavior and installs
+updated representations. We argue this account is structurally
+incorrect. Drawing on a theory of \emph{abductive accumulation}
+\cite{minamoto2026accum}, we propose that fine-tuning is better
+modeled as \emph{frame archival}: prior interpretive frames are not
+deleted from weight space but archived alongside the new frame, with
+a modified selection mechanism determining which frame is activated
+at inference time. Under this model, prior-frame reactivation is
+not a failure of fine-tuning but a structural consequence of how
+neural systems implement belief revision. This has direct implications
+for hallucination persistence, bias rebound after RLHF, and the
+design of debiasing interventions. We identify three testable
+predictions distinguishing the accumulation model from the standard
+correction model, and propose mechanistic interpretability as the
+primary empirical route for verification.
+\end{abstract}
+
+%-------------------------------------------------------------------
+\section{Introduction}
+%-------------------------------------------------------------------
+
+Large language models (LLMs) exhibit a well-documented failure mode:
+behaviors suppressed by fine-tuning or reinforcement learning from
+human feedback (RLHF) reappear under distributional shift, adversarial
+prompting, or sufficiently novel contexts
+\cite{perez2022ignore, wei2023jailbroken, yang2023shadow}.
+The standard explanation is incomplete fine-tuning: the corrective
+training signal was insufficient to fully overwrite the prior behavior.
+The prescription follows directly: more data, more compute, stronger
+regularization.
+
+We propose a different diagnosis. The reappearance of suppressed
+behaviors is not a failure of correction. It is the expected behavior
+of a system that \emph{archives} rather than \emph{overwrites} prior
+interpretive frames. Under the accumulation model we develop here,
+fine-tuning installs a new frame at the top of an interpretive
+stack while the prior frame is retained in weight space with a
+modified selection probability. Suppressed behaviors reappear
+precisely because the prior frame is reactivated under conditions
+that resemble its original acquisition context---not because
+correction was incomplete, but because correction, in the relevant
+sense, did not occur.
+
+This reframing has practical consequences. If the accumulation model
+is correct, increasing the amount of corrective fine-tuning data
+will not eliminate prior-frame reactivation; it will reduce the
+selection probability of the prior frame under typical conditions
+while leaving the reactivation channel open. Reliable debiasing
+requires instead a modification of the \emph{selection mechanism}
+that suppresses prior-frame activation, not merely stronger
+overwriting of the prior frame content.
+
+%-------------------------------------------------------------------
+
+\begin{remark}[Terminological note on ``overwrite'']
+See \cite{minamoto2026overwrite} for the precise definition.
+In this paper, \emph{overwrite} denotes a frame-dominant transition
+(superposition $+$ selection-dominance), not deletion of prior frames.
+\end{remark}
+
+\section{The Accumulation Model}
+%-------------------------------------------------------------------
+
+\subsection{Interpretive Frames and Overwrite}
+
+We adopt the formal framework of \cite{minamoto2026overwrite,
+minamoto2026accum}. An \emph{interpretive frame} $F(R)$ is a function
+from inputs to outputs induced by the representational state $R$ of a
+system. For an LLM, $R$ corresponds to the weight configuration; $F(R)$
+is the conditional distribution $P(\text{output} \mid \text{input}, R)$.
+
+The standard correction model assumes that fine-tuning implements
+an \emph{overwrite transition} $R_t \to R_{t+1}$ in which the new
+frame $F(R_{t+1})$ replaces $F(R_t)$:
+\[
+\text{(Overwrite):} \quad R_{t+1} = \arg\min_{R} \mathcal{L}(R, D_{\mathrm{ft}})
+\]
+where $D_{\mathrm{ft}}$ is the fine-tuning dataset and prior behavior
+is treated as eliminated up to the residual of the optimization.
+
+\subsection{Accumulation as the Default Mechanism}
+
+We propose instead that neural learning implements
+\emph{accumulation}: the prior frame $F(R_t)$ is archived in weight
+space rather than deleted, and the new frame $F(R_{t+1})$ is
+superimposed onto the same weight space.
+
+\begin{definition}[Interpretive Stack in Weight Space]
+The weight configuration $R$ of a fine-tuned model implicitly
+encodes a layered interpretive stack
+$\mathcal{L} = (F_{t+1}, F_t, F_{t-1}, \ldots)$,
+where $F_{t+1}$ is the most recently installed frame and earlier
+frames are encoded as residual structure in the weight space.
+The effective output frame at inference time is determined by a
+\emph{selection rule} $\mathcal{S}$ that maps the input context
+$e$ to an index $k$, activating frame $F_k$.
+\end{definition}
+
+\begin{definition}[Selection Rule]
+A selection rule $\mathcal{S}: \mathcal{E} \to \{1, \ldots, n\}$
+maps the current input context $e$---including prompt structure,
+distributional features, and contextual similarity to prior
+training conditions---to an index $k$ selecting the active frame.
+A candidate functional form is:
+\[
+\mathcal{S}(e) = \arg\max_k \; \mathrm{softmax}_k
+\bigl(s(e, C_k) / \tau\bigr)
+\]
+where $C_k$ is the acquisition context of frame $F_k$,
+$\delta(\cdot, \cdot)$ is a context-similarity metric on
+$\mathcal{E}$, and $\tau > 0$ is a temperature parameter.
+\end{definition}
+
+\begin{remark}
+This is not merely a metaphor. Mechanistic interpretability
+research has identified that LLMs encode competing
+``circuits''---distinct computational subgraphs responsible
+for different behaviors \cite{anthropic2025circuit,
+conmy2023towards}. Fine-tuning modifies the relative activation
+probability of these circuits without deleting the prior circuits.
+The accumulation model provides the theoretical framework within
+which this empirical phenomenon is the expected outcome rather
+than an anomaly.
+\end{remark}
+
+\subsection{The Non-Correctability Proposition}
+
+\begin{proposition}[Prior Frame Persistence]
+\label{prop:persist}
+Let $R_{t+1}$ be the weight configuration after fine-tuning on
+$D_{\mathrm{ft}}$, and let $R_t$ encode the prior frame $F_t$.
+Under the accumulation model, $F_t$ remains present in $R_{t+1}$
+as a residual structure with acquisition context $C_t$.
+The reactivation probability of $F_t$ satisfies:
+\[
+P\bigl(\mathcal{S}(e) = k \mid F_k = F_t\bigr) > 0
+\quad \text{whenever } s(e, C_t) > \epsilon
+\]
+for some threshold $\epsilon > 0$ determined by the selection
+temperature $\tau$.
+This bound is non-zero regardless of the amount of fine-tuning
+data in $D_{\mathrm{ft}}$, because $\mathcal{S}$ responds to
+input-context similarity to $C_t$, which is a property of the
+input distribution rather than of the corrective training signal.
+\end{proposition}
+
+\begin{corollary}
+Increasing the volume of corrective fine-tuning data reduces the
+default selection probability of $F_t$ (by shifting $\mathcal{S}$
+toward $F_{t+1}$ across the typical input distribution) but does
+not eliminate the reactivation channel. Prior-frame reactivation
+under out-of-distribution inputs is therefore a structural
+consequence of accumulation, not a failure of sufficiency.
+\end{corollary}
+
+%-------------------------------------------------------------------
+\section{Distinguishing Predictions}
+%-------------------------------------------------------------------
+
+The accumulation model and the standard correction model make
+distinct empirical predictions. We identify three that are
+tractable with current mechanistic interpretability tools.
+
+\subsection{Prediction 1: Context-Dependent Reactivation}
+
+\textbf{Correction model:} Suppressed behavior should be absent
+regardless of input context (up to residual optimization error,
+which should be uniformly distributed over the input space).
+
+\textbf{Accumulation model:} Reactivation probability is highest
+for inputs $e$ with large $s(e, C_t)$---that is, inputs
+that resemble the acquisition context of the prior frame.
+Suppression failures should be systematically concentrated in
+regions of input space close to the original pretraining
+distribution.
+
+\textbf{Test:} Measure the rate of suppressed behavior reappearance
+as a function of the distributional distance between the test input
+and the fine-tuning distribution. The accumulation model predicts
+a monotonically increasing reactivation rate as inputs move
+away from $D_{\mathrm{ft}}$ toward $D_{\mathrm{pretrain}}$.
+
+\subsection{Prediction 2: Circuit Persistence After Fine-Tuning}
+
+\textbf{Correction model:} Circuits responsible for suppressed
+behaviors should be modified or eliminated by fine-tuning.
+
+\textbf{Accumulation model:} The circuits encoding $F_t$ should
+remain identifiable in $R_{t+1}$ via activation patching or
+causal tracing, with reduced but non-zero causal effect on
+outputs under typical prompts.
+
+\textbf{Test:} Apply circuit-tracing methods \cite{anthropic2025circuit,
+conmy2023towards} before and after fine-tuning on a targeted
+behavior. Compare the causal contribution of the identified
+circuits at each stage. The accumulation model predicts a
+reduction in causal contribution but not elimination.
+
+\subsection{Prediction 3: Load-Dependent Reactivation}
+
+\textbf{Correction model:} Cognitive-load analogues (long contexts,
+complex reasoning chains, adversarial perturbations) should not
+systematically increase the rate of suppressed behavior reappearance
+beyond baseline noise.
+
+\textbf{Accumulation model:} Conditions that degrade the selection
+mechanism---analogous to cognitive load in human cognition---should
+systematically increase reactivation probability. In LLMs,
+candidates include: very long contexts (selection mechanism must
+integrate over more tokens), high-perplexity inputs (unfamiliar
+distribution degrades context-similarity estimation), and
+chain-of-thought suppression (removal of the reasoning scaffold
+that normally supports $F_{t+1}$ selection).
+
+\textbf{Test:} Vary context length, perplexity, and reasoning
+scaffold availability while measuring the rate of suppressed
+behavior reappearance.
+
+%-------------------------------------------------------------------
+\section{Implications for Alignment and Debiasing}
+%-------------------------------------------------------------------
+
+\subsection{Why More Data Is Not Sufficient}
+
+If the accumulation model is correct, the standard prescription
+for bias elimination---more diverse fine-tuning data, stronger
+RLHF signal---addresses the selection probability of the prior
+frame under typical conditions but does not close the reactivation
+channel. An adversary with knowledge of the pretraining distribution
+can construct inputs $e$ with large $s(e, C_t)$ that reliably
+reactivate the prior frame regardless of fine-tuning volume.
+
+This is not a theoretical concern: it is precisely the mechanism
+by which jailbreaks operate \cite{wei2023jailbroken}. The
+accumulation model provides a structural account of why
+jailbreaks are persistent and difficult to patch via additional
+fine-tuning alone.
+
+\subsection{Selection Stability Capacity as the Target}
+
+The appropriate target for debiasing intervention is what we call
+\emph{Selection Stability Capacity} (SSC): the system's ability
+to maintain the selection of $F_{t+1}$ across the full input
+distribution, including inputs that resemble $C_t$.
+
+SSC-directed interventions would include:
+\begin{enumerate}[label=(\roman*)]
+    \item \textbf{Acquisition context poisoning}: During fine-tuning,
+    deliberately present $D_{\mathrm{ft}}$ in contexts similar to
+    $C_t$, so that $\mathcal{S}$ learns to select $F_{t+1}$
+    even under $C_t$-similar conditions.
+    \item \textbf{Gating mechanism design}: Introduce explicit
+    gating modules that suppress prior-circuit activation based
+    on input features, rather than relying on competition between
+    circuits in the weight space.
+    \item \textbf{Stack depth control}: Limit the effective depth
+    of the interpretive stack by regularizing the diversity of
+    latent frame representations during training.
+\end{enumerate}
+
+\subsection{Negative Abductive Capability as Pre-Commitment Defense}
+
+The companion concept of \emph{Negative Abductive Capability}
+(NAC) \cite{minamoto2026overwrite} addresses the pre-commitment
+phase: the capacity to withhold frame adoption until sufficient
+evidence warrants it. In LLM terms, NAC corresponds to the ability
+to maintain hypothesis uncertainty rather than collapsing to a
+single interpretive frame early in a reasoning chain.
+
+NAC and SSC are complementary interventions: NAC reduces the
+probability of adopting an erroneous frame in the first place
+(reducing the stack depth over the training period), while SSC
+suppresses reactivation of erroneous frames that have already
+been archived. Reliable debiasing requires both.
+
+%-------------------------------------------------------------------
+\section{Relation to Prior Work}
+%-------------------------------------------------------------------
+
+The persistence of suppressed behaviors in fine-tuned LLMs has been
+documented extensively \cite{perez2022ignore, wei2023jailbroken,
+yang2023shadow, qi2023fine}. Prior accounts attribute this to
+insufficient training signal, catastrophic forgetting in reverse
+(failure to forget), or the geometry of the loss landscape.
+
+The accumulation model is distinct from these accounts in three ways.
+First, it is a positive account of what fine-tuning does rather than
+a negative account of what it fails to do: fine-tuning implements
+accumulation, not failed overwriting. Second, it predicts that
+reactivation is \emph{context-structured} rather than uniformly
+distributed, which the existing accounts do not. Third, it identifies
+a specific intervention target (the selection mechanism / SSC)
+rather than prescribing more of the same intervention (more data,
+stronger signal).
+
+The relationship to continual learning research
+\cite{mccloskey1989catastrophic, kirkpatrick2017overcoming} is
+complementary: that literature addresses forgetting of prior
+knowledge during new learning; the accumulation model addresses
+the converse---persistence and reactivation of prior knowledge
+that was intended to be suppressed.
+
+%-------------------------------------------------------------------
+\section{Pilot Empirical Evidence}
+\label{sec:pilot}
+%-------------------------------------------------------------------
+
+The three predictions of Section~3 require activation-level
+mechanistic experiments. We report a pilot study using
+representational similarity analysis (RSA) that provides
+initial structural support for the accumulation model's
+central claim: fine-tuning does not delete prior representational
+structure but reorganizes it.
+
+\paragraph{Setup.}
+We compared three training checkpoints of Pythia-70m
+\cite{biderman2023}: step~0 (random initialization),
+step~1000 (early training), step~143000 (reference).
+Pairwise concept dissimilarity matrices were computed over
+$n = 29$ probe concepts at hidden layers $\ell \in \{2, 4, 6\}$,
+averaged over three prompt templates to reduce surface-form bias.
+Structural alignment was measured via the second-order RSA
+correlation $\rho_\mathrm{cog}$.
+
+\paragraph{Results.}
+$\rho_\mathrm{cog}$ increases monotonically across all layers
+as training progresses
+(L6: step-0 $= 0.017$; step-1000 $= 0.535$).
+Crucially, step-0 retains positive structural correlation
+with step-143000 at all layers---it is not uncorrelated noise.
+Cross-model replication with GPT-2 \cite{radford2019language}
+confirms that $\rho_\mathrm{cog}(\text{GPT-2-trained},
+\text{Pythia-trained}) \approx 0.42$ versus
+$\rho_\mathrm{cog}(\text{GPT-2-trained},
+\text{Pythia-step-0}) \approx 0.10$ across all layers.
+
+\paragraph{Interpretation.}
+If fine-tuning implemented pure correction---deleting prior
+frame representations---we would expect random initialization
+to share no structural similarity with the trained reference
+beyond noise.
+Instead, the monotone increase in $\rho_\mathrm{cog}$ indicates
+that training progressively aligns structure rather than
+replacing it: consistent with Prediction~2 (Circuit Persistence).
+The cross-model convergence result further suggests that the
+relational geometry induced by training is a property of the
+training distribution rather than the architecture, consistent
+with the view that fine-tuning installs a new top-of-stack
+frame without deleting the prior.
+
+Direct tests of Predictions~1--3 via activation patching and
+context-dependent reactivation experiments remain as the primary
+empirical priority.
+All code is available at
+\url{https://github.com/minamominamoto/grounding-without-reality}.
+
+%-------------------------------------------------------------------
+\section{Open Problems}
+%-------------------------------------------------------------------
+
+\begin{enumerate}[label=\textbf{OP\arabic*.}, leftmargin=*, itemsep=4pt]
+
+\item \textbf{Mechanistic identification of interpretive stacks.}
+    Develop a method for identifying the components of the
+    interpretive stack in a fine-tuned model's weight space via
+    activation patching, probing, or sparse autoencoders
+    \cite{bricken2023monosemanticity}.
+
+\item \textbf{Formal characterization of the selection rule.}
+    Determine the functional form of $\mathcal{S}$ in transformer
+    architectures. Is context-similarity to acquisition contexts
+    encoded in attention patterns, residual stream directions, or
+    both?
+
+\item \textbf{SSC measurement.}
+    Develop an operational measure of SSC for LLMs: given a
+    fine-tuned model and a known prior frame $F_t$, estimate the
+    probability that $F_t$ is selected as a function of
+    $s(e, C_t)$ across a representative test distribution.
+
+\item \textbf{NAC implementation in transformers.}
+    Identify the architectural correlate of NAC: what feature
+    of a transformer architecture enables sustained uncertainty
+    maintenance across a reasoning chain without premature
+    frame commitment?
+
+\end{enumerate}
+
+%-------------------------------------------------------------------
+\section{Conclusion}
+%-------------------------------------------------------------------
+
+We have proposed that fine-tuning in neural systems implements
+accumulation rather than correction: prior interpretive frames are
+archived in weight space and remain selectable under appropriate
+input conditions. This reframing has three practical consequences.
+First, persistent suppression failures and jailbreaks are structural
+predictions of the model, not anomalies. Second, increasing
+fine-tuning data volume is insufficient for reliable debiasing.
+Third, the appropriate intervention target is Selection Stability
+Capacity---the system's ability to maintain the selection of the
+corrected frame across the full input distribution.
+
+The three distinguishing predictions of Section~3 are tractable
+with current mechanistic interpretability tools and provide a
+concrete empirical program for testing the model.
+
+%-------------------------------------------------------------------
+\section*{Acknowledgments}
+%-------------------------------------------------------------------
+
+No funding was received for this work.
+
+%-------------------------------------------------------------------
+\begin{thebibliography}{99}
+
+\bibitem{minamoto2026accum}
+Minamoto, M. (2026). Abductive accumulation: Why interpretive frames
+persist and how selection stability determines cognitive reliability.
+Preprint (not yet on arXiv). Available at:
+\texttt{https://github.com/minamominamoto/topology-of-grounding}
+
+\bibitem{minamoto2026overwrite}
+Minamoto, M. (2026). Abduction as overwrite: Negative abductive
+capability as a structural condition for reliable inference.
+Preprint (not yet on arXiv). Available at:
+\texttt{https://github.com/minamominamoto/topology-of-grounding}
+
+\bibitem{anthropic2025circuit}
+Anthropic. (2025). Circuit-level analysis of language model
+representations. \textit{Technical report}.
+
+\bibitem{conmy2023towards}
+Conmy, A., Mavor-Parker, A., Lynch, A., Heimersheim, S.,
+\& Garriga-Alonso, A. (2023). Towards automated circuit discovery
+for mechanistic interpretability. \textit{NeurIPS 2023}.
+
+\bibitem{perez2022ignore}
+Perez, F., \& Ribeiro, I. (2022). Ignore previous prompt:
+Attack techniques for language models. \textit{arXiv:2211.09527}.
+
+\bibitem{wei2023jailbroken}
+Wei, A., Haghtalab, N., \& Steinhardt, J. (2023). Jailbroken:
+How does LLM safety training fail? \textit{NeurIPS 2023}.
+
+\bibitem{yang2023shadow}
+Yang, X., et al. (2023). Shadow alignment: The ease of subverting
+safely-aligned language models. \textit{arXiv:2310.02949}.
+
+\bibitem{qi2023fine}
+Qi, X., et al. (2023). Fine-tuning aligned language models
+compromises safety, even when users are not malicious.
+\textit{arXiv:2310.03693}.
+
+\bibitem{mccloskey1989catastrophic}
+McCloskey, M., \& Cohen, N. J. (1989). Catastrophic interference
+in connectionist networks. \textit{Psychology of Learning and
+Motivation}, 24, 109--165.
+
+\bibitem{kirkpatrick2017overcoming}
+Kirkpatrick, J., et al. (2017). Overcoming catastrophic forgetting
+in neural networks. \textit{Proceedings of the National Academy
+of Sciences}, 114(13), 3521--3526.
+
+\bibitem{bricken2023monosemanticity}
+Bricken, T., et al. (2023). Towards monosemanticity: Decomposing
+language models with dictionary learning.
+\textit{Transformer Circuits Thread}.
+
+\bibitem{biderman2023}
+Biderman, S., et al.\ (2023).
+Pythia: A suite for analyzing large language models across training and scaling.
+\textit{Proceedings of ICML 2023}.
+
+\bibitem{radford2019language}
+Radford, A., et al.\ (2019).
+Language models are unsupervised multitask learners.
+\textit{OpenAI Blog}, 1(8).
+
+\end{thebibliography}
+
+\end{document}

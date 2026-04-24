@@ -1,0 +1,40 @@
+# LaTeX intermediate files
+*.aux
+*.log
+*.out
+*.toc
+*.lof
+*.lot
+*.fls
+*.fdb_latexmk
+*.synctex.gz
+*.bbl
+*.blg
+*.nav
+*.snm
+*.vrb
+
+# macOS
+.DS_Store
+._*
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv*/
+
+# Archives / temp
+*.zip
+名称未設定フォルダ*
+tmp/
+.tmp/
+
+# Editor
+*.swp
+*~
+.vscode/
+.idea/
+
+# Claude Code local settings
+.claude/

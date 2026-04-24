@@ -1,0 +1,957 @@
+\documentclass[12pt]{article}
+
+% arXiv categories: cs.AI cs.AR q-bio.NC
+\usepackage{amsmath, amssymb, amsthm}
+\usepackage{geometry}
+\usepackage{cite}
+\usepackage{enumitem}
+\usepackage{hyperref}  % load last
+
+\geometry{margin=1in}
+
+\newtheorem{definition}{Definition}
+\newtheorem{proposition}{Proposition}
+\newtheorem{conjecture}{Conjecture}
+\newtheorem{remark}{Remark}
+
+\title{Reconfigurable Dataflow Topology and the Hardware-Grounding\\
+Alignment Problem:\\
+A Structural Reformulation and Research Agenda\\
+for CGLA-class Architectures}
+
+\author{Minamo Minamoto\\
+\small Independent\\
+\small \texttt{minamominamoto4f5683f6@gmail.com}}
+
+\date{April 9, 2026}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+Current AI accelerator design is optimized for the computational
+demands of large language models, but a structural question has
+received insufficient attention: does the topology of a hardware
+architecture constrain the class of sensory groundings it can
+faithfully implement? We propose a reformulation of this question
+using a topological framework introduced in a companion paper
+\cite{minamoto2026}, which formalizes symbol grounding as a
+structural property of sensory space and introduces the
+Gromov--Hausdorff cognitive distance $d_{\mathrm{cog}}$ as a
+measure of grounding alignment between cognitive systems.
+
+Within this framework, we argue that fixed-dataflow accelerators
+---including TPUs, GPUs, and memory-integrated SoCs such as the
+Apple M-series---impose a topological constraint on the class of
+sensory groundings they can implement, incurring a strictly
+positive $d_{\mathrm{cog}}$ lower bound for sensory spaces not
+embeddable in their fixed computational graph topology. We further
+propose that CGLA-class reconfigurable architectures are
+\emph{candidates} for the architectural property required for
+universal sensory grounding, though this claim rests conditionally
+on an unproven conjecture (Section~4.2) whose verification or
+refutation is the central open obligation of this research program.
+
+This paper does not present a completed theory. It presents a
+structural reformulation of the hardware-grounding alignment
+problem, identifies the key unresolved challenge for CGLA-class
+architectures, and proposes a research agenda connecting hardware
+topology to sensory topology. The necessary empirical and formal
+completion of this program---including verification of CGLA
+topological universality and empirical measurement of
+$d_{\mathrm{cog}}$ across hardware substrates---requires
+collaboration between cognitive theory and hardware architecture
+research. We close with five open problems at this intersection.
+\end{abstract}
+
+\tableofcontents
+
+\newpage
+
+%-------------------------------------------------------------------
+\section{Introduction}
+%-------------------------------------------------------------------
+
+The dominant AI accelerator paradigm is shaped by the computational demands
+of transformer-based large language models: massive matrix multiplication,
+high memory bandwidth, and fixed dataflow optimized for dense linear algebra.
+Google's Tensor Processing Unit (TPU) represents the extreme of this design
+philosophy---a systolic array architecture in which the dataflow between
+processing elements is fixed at design time \cite{jouppi2017}. This fixity
+yields exceptional performance per watt for the specific computational
+graphs of transformer inference, but it purchases efficiency at the cost of
+architectural flexibility.
+
+A parallel line of inquiry has asked what \emph{cognitive} requirements
+AI hardware should satisfy. If the goal of an AI system is not merely to
+process text efficiently, but to implement something resembling genuine
+understanding---grounded in sensorimotor experience and capable of concept
+formation across diverse domains---then the hardware substrate may matter
+in ways that current accelerator design does not address.
+
+In a companion paper \cite{minamoto2026}, we proposed a structural
+reformulation of symbol grounding: the topology of the sensory space
+in which grounding occurs may determine the geometry of the resulting
+cognitive representations, and two agents' grounding-induced topologies
+being homeomorphic is proposed as a sufficient condition for full
+intensional concept sharing. This reformulation of Harnad's symbol
+grounding problem \cite{harnad1990} from a binary to a structural
+condition, if correct, has direct implications for hardware design.
+
+The central proposal of the present paper is:
+
+\begin{quote}
+\emph{Fixed-dataflow architectures impose a topological restriction on
+implementable sensory spaces---this is the paper's primary formal
+claim (Proposition~1, conditional on Definition~5). We further
+propose that CGLA-class reconfigurable architectures are strong
+candidates for the architectural property required for universal
+sensory grounding, but this claim rests on Conjecture~1, which
+remains unproven. This paper's goal is to make these structural
+claims precise, identify what verification would require, and
+propose a research agenda for CGLA-class architecture as a
+candidate substrate for grounding-faithful AI systems.}
+\end{quote}
+
+We develop this proposal in three steps. Section~2 reviews the
+framework from \cite{minamoto2026}. Section~3 argues that fixed
+dataflow implies topological restriction under Definition~5.
+Section~4 presents CGLA-class reconfigurability as a structural
+candidate and compares it qualitatively to FPGAs and fixed-dataflow
+alternatives. Section~5 discusses implications and introduces
+$d_{\mathrm{cog}}$ as a hardware selection criterion. Section~6
+lists open problems that the CGLA research community is best
+positioned to resolve.
+
+\begin{remark}[On the status of this paper]
+This paper is a \emph{foundational position paper}, not a completed
+theory. Its contribution is conceptual: it proposes a structural
+reformulation of the hardware-grounding alignment problem, identifies
+the topological restriction imposed by fixed-dataflow architectures,
+and specifies what CGLA-class architectures would need to demonstrate
+in order to satisfy the universality condition. The formal completion
+of the program---proof or disproof of Conjecture~1, empirical
+measurement of $d_{\mathrm{cog}}$, and verification that CGLA
+configurations faithfully implement biological sensory
+topologies---requires collaboration between cognitive theory and
+hardware architecture research, and is beyond the scope of this paper
+alone.
+\end{remark}
+
+%-------------------------------------------------------------------
+\section{Background: Sensory Space Topology and Grounding}
+%-------------------------------------------------------------------
+
+We briefly summarize the framework of \cite{minamoto2026}, to which we
+refer the reader for full definitions and proofs.
+
+\begin{definition}[Sensory Space \cite{minamoto2026}]
+The \emph{sensory space} of a cognitive agent $\mathcal{A}$ equipped with
+transduction channels $\{T_1, \ldots, T_n\}$ is the product space
+\[
+\mathcal{S}(\mathcal{A}) = \prod_{i=1}^{n} A_i
+\]
+equipped with the product topology, where each $A_i$ carries the topology
+induced by the neural activation metric of channel $T_i$.
+\end{definition}
+
+\begin{definition}[Grounding Map \cite{minamoto2026}]
+Let $\mathcal{K}(\mathcal{S}(\mathcal{A}))$ denote the hyperspace of
+nonempty closed subsets of $\mathcal{S}(\mathcal{A})$, equipped with the
+Vietoris topology \cite{vietoris1922}. A \emph{grounding map} is a
+function
+\[
+G: \Sigma \to \mathcal{K}(\mathcal{S}(\mathcal{A}))
+\]
+where $\Sigma$ is a symbol set and $G(\sigma)$ is the closed set of
+sensory states associated with symbol $\sigma$.
+\end{definition}
+
+\begin{definition}[Grounding-Induced Topology \cite{minamoto2026}]
+The \emph{grounding-induced topology} $\tau_{\mathcal{A}}$ on $\Sigma$
+is the initial topology with respect to $G$: the coarsest topology making
+$\sigma \mapsto G(\sigma)$ continuous with respect to the Vietoris
+topology on $\mathcal{K}(\mathcal{S}(\mathcal{A}))$.
+\end{definition}
+
+The key result of \cite{minamoto2026} is that homeomorphism of
+grounding-induced topologies is \emph{sufficient} for complete intensional
+concept sharing (Conjecture~1 of \cite{minamoto2026}), while topological
+inequivalence implies incommensurability of intensional content. The
+Gromov--Hausdorff cognitive distance
+\[
+d_{\mathrm{cog}}(\mathcal{A}, \mathcal{B})
+= d_{GH}\!\left((\Sigma, \tau_{\mathcal{A}}),\, (\Sigma, \tau_{\mathcal{B}})\right)
+\]
+measures the degree of grounding alignment between two agents, with
+$d_{\mathrm{cog}} = 0$ corresponding to the homeomorphic (complete sharing)
+case \cite{gromov1981}.
+
+%-------------------------------------------------------------------
+\section{Fixed Dataflow as Topological Restriction}
+%-------------------------------------------------------------------
+
+\subsection{Computational Graphs and Their Topology}
+
+A neural network computation can be represented as a directed acyclic graph
+$\mathcal{G} = (V, E)$ where vertices $V$ are processing elements and
+directed edges $E$ represent dataflow. The \emph{computational graph
+topology} is the topology induced on $V$ by the adjacency structure of
+$\mathcal{G}$.
+
+\begin{definition}[Fixed Dataflow Architecture]
+An architecture is \emph{fixed-dataflow} if the computational graph
+$\mathcal{G}$ is determined at design time and cannot be reconfigured
+during operation. The topology of $\mathcal{G}$ is therefore a constant
+of the hardware.
+\end{definition}
+
+TPUs are fixed-dataflow in this sense: the systolic array defines a rigid
+grid topology in which data flows in a fixed pattern optimized for
+matrix multiplication. Alternative operations---including those arising
+from non-matrix sensory modalities---must be mapped onto this fixed
+topology, potentially at significant computational cost or loss of
+structural fidelity.
+
+\subsection{The Topological Restriction Proposition}
+
+The connection between sensory space topology and computational graph
+topology is the following. Any implementation of a grounding map $G$ on
+hardware requires a mapping from the topological structure of
+$\mathcal{S}(\mathcal{A})$ to the topological structure of the
+computational graph $\mathcal{G}$. We formalize this as follows.
+
+\begin{definition}[Topological Implementation Map]
+A \emph{topological implementation map} from sensory space
+$(\mathcal{S}(\mathcal{A}), \tau_{\mathcal{A}})$ to a hardware
+architecture $\mathcal{H}$ with computational graph
+$(\mathcal{G}, \tau_{\mathcal{G}})$ is a continuous injection
+\[
+\phi: (\Sigma, \tau_{\mathcal{A}}) \hookrightarrow
+      (\mathcal{G}, \tau_{\mathcal{G}}).
+\]
+The implementation is \emph{faithful} if $\phi$ is a homeomorphism
+onto its image, i.e., both $\phi$ and $\phi^{-1}$ preserve the
+topological structure of the grounding-induced symbol space.
+\end{definition}
+
+\begin{remark}[Conceptual justification of Definition~5]
+Definition~5 maps between two spaces of fundamentally different
+character: $(\Sigma, \tau_{\mathcal{A}})$ is a semantic space---the
+symbol set equipped with the topology induced by sensorimotor grounding
+---while $(\mathcal{G}, \tau_{\mathcal{G}})$ is a physical space---the
+processing element graph of a hardware chip. This cross-domain mapping
+requires justification.
+
+The conceptual bridge is the following: any physical implementation
+of a grounding map $G: \Sigma \to \mathcal{K}(\mathcal{S}(\mathcal{A}))$
+must assign each symbol $\sigma \in \Sigma$ to a set of computational
+states that represent $G(\sigma)$, and must implement the relational
+structure among symbols as relational structure among computational
+processes. Symbols that are topologically close in $\tau_{\mathcal{A}}$
+---meaning their grounding sets are similar in sensory space---should
+correspond to computationally related processes in $\mathcal{G}$.
+If the computational graph lacks the relational structure to place such
+processes in proximity, the topological relationships among grounded
+symbols are distorted. Definition~5 formalizes this requirement as
+continuity: $\phi$ preserves the topological relationships of the
+semantic space in the computational graph.
+
+The faithfulness condition (homeomorphism onto image) further requires
+that no relational structure is lost in either direction: neither is
+$\tau_{\mathcal{A}}$-proximity collapsed into $\tau_{\mathcal{G}}$-
+distance (loss of discrimination), nor is $\tau_{\mathcal{G}}$-proximity
+imposed on $\tau_{\mathcal{A}}$-distant symbols (spurious conflation).
+
+We acknowledge that this definition conflates semantic topology and
+physical topology in a way that requires empirical grounding---namely,
+the specification of what metric on $\mathcal{G}$ is relevant for
+cognitive purposes. This is OP1; the formal adequacy of Definition~5
+is therefore conditional on its resolution.
+\end{remark}
+
+The following restriction holds as a direct consequence of
+Definition~5; its force depends on the adequacy of that definition,
+which we identify as the most fundamental open problem of this
+framework (OP1).
+
+\begin{proposition}[Topological Restriction of Fixed Dataflow
+  (under Definition~5)]
+Let $\mathcal{H}$ be a fixed-dataflow architecture with computational
+graph topology $\tau_{\mathcal{G}}$. Then $\mathcal{H}$ can implement
+only grounding maps $G$ whose induced topology $\tau_{\mathcal{A}}$ is
+homeomorphic to a subspace of $(\mathcal{G}, \tau_{\mathcal{G}})$.
+Sensory spaces whose topology is not homeomorphic to any subspace of
+$(\mathcal{G}, \tau_{\mathcal{G}})$ cannot be faithfully grounded on
+$\mathcal{H}$.
+\end{proposition}
+
+\begin{remark}
+We emphasize the distinction between \emph{computational universality}
+and \emph{topological faithfulness}. A fixed-dataflow architecture is
+Turing-complete in the sense that it can compute any computable
+function; the restriction here is not on computability but on structural
+preservation. When a grounding map $G$ whose sensory topology
+$\tau_{\mathcal{A}}$ is not embeddable in $\tau_{\mathcal{G}}$ is
+executed on $\mathcal{H}$, the computation proceeds correctly but the
+topological relationships among grounded symbols are distorted.
+Zero-padding and format-conversion workarounds preserve the numerical
+output of individual computations while destroying the relational
+structure of the grounding space. This distortion is therefore
+structural, not merely a performance overhead: it implies
+$d_{\mathrm{cog}} > 0$ as a \emph{lower bound} on the achievable
+cognitive distance, not a recoverable inefficiency.
+\end{remark}
+
+\subsection{Concrete Case: TPU and Chemical Sensory Space}
+
+Consider the sensory space of \textit{Caenorhabditis elegans}: a
+low-dimensional chemical topology dominated by volatile compound gradients
+\cite{bargmann2006}. The natural computational graph for implementing
+chemotaxis-based grounding is a sparse, gradient-following structure with
+few processing elements and sequential update dynamics \cite{white1986}.
+
+The TPU's systolic array, by contrast, is optimized for dense $n \times n$
+matrix products. Mapping a sparse gradient-following computation onto a
+dense matrix architecture requires either zero-padding (wasting compute)
+or restructuring the computation to fit the matrix template (distorting
+the grounding topology). Neither preserves the topological structure of
+the original sensory space.
+
+This is a concrete instance of topological restriction: the TPU's fixed
+topology is well-matched to transformer attention but poorly matched to
+chemical gradient computation. Any agent implemented on a TPU that
+attempts to ground concepts in a chemical sensory space will suffer
+elevated $d_{\mathrm{cog}}$ relative to a native chemical-topology
+implementation.
+
+\subsection{Contrast Case: GPU and Kernel-Level Pseudo-Flexibility}
+
+Graphics Processing Units (GPUs) appear more flexible than TPUs:
+CUDA kernels can be selected at runtime to implement diverse
+computational patterns, and the programmer can target different
+memory access patterns and parallelization strategies depending on
+the workload. This might suggest that GPUs occupy an intermediate
+position in topological flexibility between TPUs and CGLA-class
+architectures.
+
+We argue this appearance is misleading. GPU flexibility resides
+at the \emph{software layer}---kernel selection determines which
+computation executes on the hardware, but does not change the
+hardware topology itself. The underlying physical architecture is
+a fixed grid of Streaming Multiprocessors (SMs) connected through
+a hierarchical memory system (L1 cache, L2 cache, HBM). This
+hardware topology is determined at design time and is not
+reconfigurable during operation.
+
+Under Definition~3, GPUs are therefore fixed-dataflow in the
+relevant sense: the computational graph topology $\tau_{\mathcal{G}}$
+of the hardware remains constant across kernel invocations.
+A sparse gradient-following computation (such as the
+\textit{C. elegans} chemotaxis example of Section~3.2) mapped
+onto a GPU requires the same structural translation as on a TPU:
+the sparse graph must be padded or restructured to fit the
+dense SM grid topology. The resulting $d_{\mathrm{cog}}$ lower
+bound is therefore qualitatively identical to the TPU case,
+differing in magnitude depending on the degree of sparsity
+mismatch rather than in kind.
+
+This distinction---between software-layer flexibility and
+hardware-topology reconfigurability---is the critical boundary
+separating fixed-dataflow and reconfigurable-dataflow
+architectures for the purposes of grounding fidelity. The CGLA's
+reconfigurable interconnect changes the actual computational
+graph topology $\tau_{\mathcal{G}}$; GPU kernel selection does not.
+
+We note that Field-Programmable Gate Arrays (FPGAs) also offer
+hardware-level reconfigurability and thus do not fall under the
+fixed-dataflow restriction of Proposition~1. The comparative analysis
+of $d_{\mathrm{cog}}$-minimization between CGLA-class and FPGA
+architectures is deferred to OP5; the present argument is that
+reconfigurability is a necessary architectural property for universal
+grounding, not that CGLA is its unique instantiation.
+
+\subsection{Extended Case: Apple M-series and Memory-Integrated Fixed Dataflow}
+
+Apple's M-series System-on-Chip (SoC) architecture represents a
+distinct and instructive case that differs from both TPU and GPU in
+its integration strategy. The M5 chip \cite{apple2025m5} integrates
+a 16-core Neural Engine, a 10-core GPU with a dedicated Neural
+Accelerator in each core, and a CPU, all sharing a unified memory
+pool via a high-bandwidth interconnect (153 GB/s). This unified
+memory architecture eliminates data transfer overhead between
+processing units---a genuine engineering advantage over discrete
+chip configurations.
+
+However, the topological analysis of the present framework reveals
+that memory integration and dataflow reconfigurability are orthogonal
+properties. The M-series Neural Engine is a fixed-dataflow
+accelerator: its computational graph topology is determined at
+design time and optimized for matrix-based neural network operations.
+The Neural Accelerators within each GPU core are similarly
+fixed-topology units. The unified memory architecture addresses the
+\emph{bandwidth} bottleneck between processing units, but does not
+address the \emph{topological mismatch} between the hardware's fixed
+computational graph structure and the target sensory space topology.
+
+Concretely: an M5 implementation of \textit{C.~elegans} chemotaxis
+faces the same topological restriction as a TPU implementation.
+The sparse, gradient-following computational graph required by the
+chemotaxis loop must be mapped onto fixed matrix-operation units,
+incurring the same structural distortion that elevates
+$d_{\mathrm{cog}}$. The unified memory reduces the cost of
+transferring intermediate representations between CPU, GPU, and
+Neural Engine, but the representations themselves are computed in
+fixed-topology units that impose the same homeomorphism constraint
+as Proposition~1.
+
+\begin{remark}[Memory Integration vs.\ Topological Flexibility]
+This distinction is architecturally fundamental. Memory-integrated
+SoC designs (Apple M-series, Qualcomm Snapdragon) optimize the
+\emph{communication} topology between fixed-dataflow processing
+units. CGLA-class reconfigurable architectures optimize the
+\emph{computational} topology of the processing units themselves.
+For the purposes of $d_{\mathrm{cog}}$-minimization, only the
+latter is relevant: the cognitive distance between two grounding
+implementations is determined by the computational graph topology
+available to implement the grounding map $G$, not by the
+memory bandwidth available to transfer activations between stages.
+A system with high memory bandwidth and fixed computational topology
+will achieve lower $d_{\mathrm{cog}}$ than a low-bandwidth system
+with the same fixed topology---but a system with reconfigurable
+computational topology can achieve $d_{\mathrm{cog}} \to 0$ for
+sensory spaces within its configuration space, regardless of
+memory bandwidth.
+\end{remark}
+
+%-------------------------------------------------------------------
+\section{CGLA-class Reconfigurability as Topological Flexibility}
+%-------------------------------------------------------------------
+
+\subsection{CGLA Architecture}
+
+The Coarse-Grained Linear Array (CGLA) is a reconfigurable computing
+architecture in which the dataflow between processing elements can be
+modified at runtime \cite{akabe2025, ando2026}. Unlike the systolic
+array's fixed grid, CGLA allows the computational graph topology
+$\tau_{\mathcal{G}}$ to be reconfigured to match the structure of the
+workload.
+
+Recent work has demonstrated CGLA implementations of LLM inference
+\cite{ando2026_llm}, attention acceleration \cite{takeuchi2025}, and
+energy-efficient whisper ASR \cite{ando2025_whisper}, showing that the
+architecture can handle diverse computational structures within a single
+hardware substrate. The key property for our purposes is not performance
+per se, but \emph{topological flexibility}: the ability to present
+different computational graph topologies to different workloads.
+
+We note that other reconfigurable and neuromorphic architectures---
+including Intel's Loihi~2 \cite{davies2021}, SpiNNaker
+\cite{furber2014}, and BrainScaleS \cite{schemmel2010}---also offer
+topological flexibility via configurable spike-routing networks. The
+present argument applies to the class of reconfigurable-dataflow
+architectures broadly; CGLA is the primary instantiation we consider
+because its hardware-efficiency properties under diverse computational
+workloads have been most recently documented \cite{akabe2025,
+ando2025_whisper}. A systematic comparative analysis of
+$d_{\mathrm{cog}}$-minimization across these architectures is
+deferred to OP5.
+
+\subsection{Topological Flexibility and Universal Grounding}
+
+\begin{definition}[Topologically Universal Architecture]
+An architecture $\mathcal{H}$ is \emph{topologically universal} with
+respect to a class $\mathcal{C}$ of sensory spaces if for every
+$\mathcal{S} \in \mathcal{C}$, there exists a configuration of
+$\mathcal{H}$ whose computational graph topology is homeomorphic to the
+grounding-induced topology of $\mathcal{S}$.
+\end{definition}
+
+\begin{conjecture}[CGLA Topological Universality]
+CGLA-class architectures are topologically universal with respect to the
+class of sensory spaces arising from biological transduction channels
+(chemical, visual, mechanoreceptive, proprioceptive, and their
+cross-modal products).
+\end{conjecture}
+
+\begin{remark}[On the strength of the homeomorphism condition]
+The universality conjecture requires exact homeomorphism between
+CGLA computational graph topologies and biological sensory topologies.
+This is a strong condition that may not hold in practice, for two
+reasons.
+
+First, biological sensory spaces are continuous, high-dimensional,
+and fiber-bundle-structured in many organisms (Section~3.2 of
+\cite{minamoto2026}), while CGLA computational graphs are finite and
+discrete. A faithful homeomorphism in the strict sense therefore
+requires discretization, which necessarily involves approximation.
+
+Second, even if CGLA's configuration space is dense in the metric
+space of sensory topologies (OP5), there may be sensory topologies
+that require configurations exceeding CGLA's physical connectivity
+constraints.
+
+We therefore propose a weakened version of the universality condition
+as an alternative target for verification: rather than exact
+homeomorphism, require that CGLA can achieve $d_{\mathrm{cog}}$
+below a threshold $\epsilon > 0$ for all sensory spaces in the
+biological class. This $\epsilon$-universality condition is more
+empirically tractable and biologically meaningful, since perfect
+grounding fidelity is not required for functional cognitive
+equivalence. We flag this weakening as part of OP2.
+\end{remark}
+
+The conjecture is supported by the following structural argument. The
+CGLA's reconfigurable interconnect allows the processing element graph
+to be set to any sparse directed graph within the physical connectivity
+constraints of the chip. The sensory spaces of biological organisms, while
+high-dimensional, are structured by the specific connectivity patterns of
+neural circuits---which are themselves sparse and locally connected
+\cite{white1986, scheffer2020}. A reconfigurable architecture that can
+present sparse, locally-connected computational graphs is therefore
+structurally aligned with biological sensory topologies in a way that
+dense matrix architectures are not.
+
+\begin{remark}[Conditional Necessity]
+The paper's central claim---reconfigurable dataflow topology as a
+\emph{necessary} condition---rests conditionally on this conjecture.
+What follows from Proposition~1 alone is that fixed-dataflow
+architectures impose a strictly positive lower bound on
+$d_{\mathrm{cog}}$ for sensory spaces not embeddable in
+$\tau_{\mathcal{G}}$. The necessity claim then holds as follows: if
+Conjecture~1 holds, then CGLA-class reconfigurability achieves a lower
+bound of zero, making it the unique class of physical architectures
+capable of faithful universal grounding. Proof of Conjecture~1 (OP2)
+is therefore the most pressing remaining obligation of this research
+program.
+\end{remark}
+
+\subsection{CGLA vs.\ FPGA: A Qualitative Comparison}
+
+As noted in Section~3.3, FPGAs also offer hardware-level
+reconfigurability and are therefore not subject to the fixed-dataflow
+restriction of Proposition~1. This raises a legitimate question: is
+CGLA's advantage over fixed-dataflow architectures shared equally by
+FPGAs, and if so, what is CGLA's distinctive contribution?
+
+We offer a qualitative comparison on three dimensions relevant to
+$d_{\mathrm{cog}}$-minimization.
+
+\textbf{Reconfiguration granularity.} FPGAs achieve reconfigurability
+via lookup tables (LUTs) and programmable interconnects at the
+gate level, enabling arbitrary logic functions. CGLA achieves
+reconfigurability at the level of coarse-grained functional units
+(arithmetic and logical operations) connected by a reconfigurable
+routing network \cite{akabe2025}. For the purpose of implementing
+sensory grounding topologies---which are structured by sparse,
+directed graphs of moderate complexity rather than arbitrary Boolean
+circuits---CGLA's coarse-grained reconfigurability is well-matched
+to the target structure. FPGA's fine-grained LUT-level programming
+introduces significant overhead (both area and latency) for the
+kind of structured sparse computations that biological sensory
+topologies require. In this sense, CGLA is a ``right-sized''
+reconfigurable architecture for grounding-topology implementation,
+whereas FPGA is over-specified for this task and incurs avoidable
+energy costs.
+
+\textbf{Energy efficiency.} CGLA's empirically demonstrated energy
+efficiency \cite{akabe2025, ando2025_whisper} reflects this
+granularity match: reconfiguring at the functional-unit level
+consumes less power than reconfiguring at the gate level for
+computations that do not require gate-level flexibility. For
+grounding implementations intended to run continuously in embodied
+systems---where energy efficiency is a hard constraint---this
+distinction is practically significant.
+
+\textbf{Scope of the present argument.} The claim of the present
+paper is that \emph{reconfigurable dataflow topology is necessary}
+for universal grounding, not that CGLA is the unique architecture
+satisfying this condition. FPGAs satisfy the topological
+reconfigurability condition and should in principle achieve
+$d_{\mathrm{cog}} \to 0$ for sensory spaces within their
+configuration space. The comparative analysis of
+$d_{\mathrm{cog}}$-minimization efficiency between CGLA and FPGA
+implementations is deferred to OP5; the present argument establishes
+the necessary property, and CGLA is the primary instantiation we
+consider because its efficiency under diverse workloads has been most
+recently and rigorously documented \cite{akabe2025, ando2025_whisper}.
+
+%-------------------------------------------------------------------
+\section{Implications}
+%-------------------------------------------------------------------
+
+\subsection{Hardware Selection as Cognitive Design}
+
+The framework developed here implies that hardware selection is not merely
+a performance engineering decision but a cognitive design decision. An AI
+system intended to implement human-like grounding requires hardware whose
+computational graph topology can approximate the topology of human sensory
+space. A system grounded in a chemical sensory space (like a robotic nose)
+requires hardware whose topology approximates a sparse gradient-following
+graph.
+
+The cognitive distance $d_{\mathrm{cog}}$ provides a principled criterion
+for hardware selection: given a target sensory topology $\tau_{\mathcal{A}}$,
+select the hardware architecture $\mathcal{H}$ that minimizes
+$d_{\mathrm{cog}}$ between $\tau_{\mathcal{A}}$ and the best achievable
+computational graph topology of $\mathcal{H}$.
+
+For transformer-based LLMs with attention-pattern topology, this criterion
+favors TPUs. For systems intended to implement diverse sensory groundings,
+this criterion favors CGLA-class architectures.
+
+\subsection{Neuro-Symbolic Alignment}
+
+Neuro-symbolic AI systems combine a neural perception layer with a
+symbolic reasoning layer \cite{garcez2022}. The topological alignment
+condition of \cite{minamoto2026}---that the symbolic layer's induced
+topology should be consistent with the neural layer's grounding
+topology---extends naturally to hardware: the hardware topology of the
+neural layer should be consistent with the sensory topology, and the
+hardware topology of the symbolic layer should be consistent with the
+relational structure of the symbol set.
+
+CGLA-class architectures, capable of presenting different topologies to
+different layers of a neuro-symbolic system, are therefore structurally
+suited to implementing topological alignment at the hardware level.
+
+\subsection{Energy Efficiency as a Consequence of Topological Matching}
+
+A secondary implication concerns energy efficiency. When hardware topology
+is mismatched to computational topology, energy is expended on structural
+translation: zero-padding, reshaping, and format conversion operations
+that carry no semantic content. Topological matching eliminates this
+overhead.
+
+This connects to CGLA's empirically demonstrated energy efficiency
+advantages \cite{akabe2025}: the efficiency gain is not merely an
+engineering achievement but a structural consequence of reduced topological
+mismatch between the computation and the hardware.
+
+%-------------------------------------------------------------------
+\section{Pilot Evidence: RSA as $d_\mathrm{cog}$ Proxy in LLMs}
+\label{sec:pilot}
+%-------------------------------------------------------------------
+
+\begin{remark}[Which component of $d_\mathrm{cog}$ does RSA measure?]
+Under the persistence signature formulation of
+\cite[Def.~\ref{def:dcog-signature}]{minamoto2026topology}, 
+$d_\mathrm{cog}$ is a tuple whose first two components 
+($d_\mathrm{GH}$ and $d_\mathrm{bn}^{(0)}$) are computable from an 
+RSA-derived metric on $\Sigma$. The second-order Spearman 
+$\rho_\mathrm{cog}$ used below is a monotone proxy for 
+$d_\mathrm{bn}^{(0)}$ --- it tracks merge-structure alignment, not 
+loop structure. Higher-order components $d_\mathrm{bn}^{(k)}$ 
+($k \geq 1$) are not resolved at the twenty-nine--concept inventory 
+used here (the detection threshold is $N \gtrsim 24$; see 
+\cite[App.~\ref{app:dcog-h1}]{minamoto2026topology}). The pilot 
+below therefore substantiates the $H_0$-level proxy claim; the 
+$H_1$-level remains open.
+\end{remark}
+
+OP4 proposes RSA as a tractable proxy for $d_\mathrm{cog}$ in toy
+hardware experiments.
+We report a pilot study applying this proxy to language model
+training checkpoints, providing a software-level proof of concept
+for the RSA-based $d_\mathrm{cog}$ measurement protocol.
+
+\paragraph{Setup.}
+We computed RSA dissimilarity matrices over $n = 29$ probe concepts
+at hidden layers $\ell \in \{2, 4, 6\}$ of Pythia-70m
+\cite{biderman2023} at three training checkpoints: step~0 (random
+initialization), step~1000 (early training), step~143000 (fully
+trained reference).
+Three prompt templates were averaged to reduce surface-form bias.
+Structural alignment to the reference was measured as the
+second-order Spearman correlation $\rho_\mathrm{cog}$, which OP4
+proposes as the operative proxy for $d_\mathrm{cog}$.
+
+\paragraph{Results.}
+$\rho_\mathrm{cog}$ increases monotonically with training at all
+layers (L6: step-0 $= 0.017$; step-1000 $= 0.535$), confirming
+that RSA captures a meaningful structural signal that evolves
+predictably with training.
+Cross-model replication with GPT-2 \cite{radford2019language}
+shows $\rho_\mathrm{cog}(\text{GPT-2}, \text{Pythia-trained})
+\approx 0.42$ versus $\rho_\mathrm{cog}(\text{GPT-2},
+\text{Pythia-step-0}) \approx 0.10$, demonstrating that
+$\rho_\mathrm{cog}$ discriminates structurally distinct
+representations.
+
+\paragraph{Relevance to hardware experiments.}
+This result supports the validity of the RSA proxy for the
+hardware $d_\mathrm{cog}$ measurement proposed in OP3--OP4.
+Specifically, it demonstrates that:
+(i) $\rho_\mathrm{cog}$ is sensitive to structural differences
+in representational geometry at fixed architecture;
+(ii) the proxy is stable across prompt formulations when averaged;
+(iii) cross-architecture comparison (GPT-2 vs. Pythia) is
+feasible with the same protocol.
+
+The analogous hardware experiment---comparing RSA dissimilarity
+matrices of grounded representations on TPU, GPU, and CGLA
+substrates---would use the same $\rho_\mathrm{cog}$ protocol,
+substituting hardware-level activation traces for model
+checkpoint activations.
+The prediction of Section~5 is that CGLA implementations yield
+higher $\rho_\mathrm{cog}$ to the target topology than fixed-dataflow
+substrates at matched computational budget.
+All code is available at
+\url{https://github.com/minamominamoto/grounding-without-reality}.
+
+%-------------------------------------------------------------------
+\section{Open Problems}
+%-------------------------------------------------------------------
+
+\begin{enumerate}[label=\textbf{OP\arabic*.}, leftmargin=*, itemsep=6pt]
+
+\item \textbf{Formal definition of topological implementation map.}
+    Define precisely the mapping from sensory space topology to
+    computational graph topology. This requires specifying which
+    properties of $\tau_{\mathcal{A}}$ are preserved under
+    discretization onto a finite processing element graph, and which
+    are necessarily lost.
+
+\item \textbf{Proof or disproof of CGLA Topological Universality.}
+    The conjecture in Section~4.2 requires a formal proof that
+    CGLA's reconfigurable interconnect can present computational graph
+    topologies homeomorphic to the grounding-induced topologies of
+    biological sensory spaces. A disproof would require exhibiting a
+    biologically motivated sensory topology that cannot be approximated
+    by any CGLA configuration within given physical constraints.
+
+\item \textbf{Empirical measurement of $d_{\mathrm{cog}}$ on hardware.}
+    Given a fixed sensory grounding task (e.g., chemical gradient
+    following in a simulated \textit{C. elegans} environment), measure
+    $d_{\mathrm{cog}}$ between implementations on TPU, GPU, and
+    CGLA-class hardware. The prediction of the present paper is that
+    CGLA achieves the smallest $d_{\mathrm{cog}}$ at comparable
+    energy expenditure.
+
+\item \textbf{Toy model of $d_{\mathrm{cog}}$.}
+    As a minimal concrete instantiation prior to full hardware
+    experiments, consider a two-dimensional chemical sensory space
+    $\mathcal{S}_{\mathrm{chem}}$ and a three-dimensional visual sensory
+    space $\mathcal{S}_{\mathrm{vis}}$, each with synthetically generated
+    grounding maps. Representational Similarity Analysis (RSA)
+    \cite{kriegeskorte2008} provides an operational proxy for
+    $d_{\mathrm{cog}}$: compute the dissimilarity matrix of grounded
+    representations on each hardware substrate and compare via Spearman
+    correlation to the target topology's dissimilarity matrix.
+
+    \textbf{On the validity of RSA as a proxy for $d_{\mathrm{cog}}$.}
+    RSA operates on pairwise dissimilarity matrices and is therefore
+    sensitive to the ordinal structure of representational similarity
+    rather than to absolute distances. Its Spearman correlation with a
+    target dissimilarity matrix approximates $d_{\mathrm{cog}}$ under
+    the assumption that the sensory space is \emph{locally isometric}
+    in the regions of interest---that is, that the ratio of pairwise
+    distances is preserved under the grounding map $G$ in a
+    neighbourhood around each grounded concept. When this assumption
+    holds, RSA similarity correlates inversely with $d_{\mathrm{cog}}$:
+    a higher Spearman correlation indicates smaller topological
+    distortion. When the sensory space is highly non-isometric (e.g.,
+    fiber bundle structures as in \textit{Drosophila}), RSA may
+    underestimate $d_{\mathrm{cog}}$ because it does not capture
+    global topological invariants such as connectivity or homotopy
+    type. In such cases, persistent homology methods would provide
+    a more faithful proxy. For the purposes of the toy model (chemical
+    and visual sensory spaces with product topology), the local
+    isometry assumption is plausible and RSA is a tractable first
+    approximation.
+
+    The prediction is that, for non-matrix sensory spaces at matched
+    computational budgets: (i) CGLA implementations yield higher RSA
+    similarity to the target topology than both TPU and GPU implementations;
+    (ii) TPU and GPU implementations yield qualitatively similar RSA
+    similarity to each other, differing in magnitude but not in kind,
+    since both are fixed at the hardware topology layer (Section~3.3);
+    and (iii) the GPU--CGLA gap exceeds the TPU--GPU gap, because GPU
+    software-layer flexibility does not reduce the structural translation
+    cost that drives $d_{\mathrm{cog}}$.
+
+\item \textbf{Extension to cross-modal sensory spaces.}
+    The \textit{Drosophila} central complex exhibits cross-modal
+    convergence that cannot be captured by a product topology
+    \cite{scheffer2020}. Extending the framework to fiber bundle
+    sensory spaces and determining whether CGLA's interconnect
+    can represent fiber bundle computational graphs is an open problem.
+
+\item \textbf{Hardware topology metric.}
+    Define a metric on computational graph topologies analogous to
+    $d_{\mathrm{cog}}$, and establish whether the CGLA's configuration
+    space is dense in this metric space (i.e., whether it can
+    approximate any target computational graph topology to arbitrary
+    precision within physical constraints).
+
+\end{enumerate}
+
+%-------------------------------------------------------------------
+\section{Conclusion}
+%-------------------------------------------------------------------
+
+We have proposed a structural reformulation of the hardware-grounding
+alignment problem. Within the topological framework of
+\cite{minamoto2026}, fixed-dataflow architectures incur a strictly
+positive $d_{\mathrm{cog}}$ lower bound for sensory spaces not
+embeddable in their fixed computational graph topology---this is the
+paper's primary formal claim, conditional on Definition~5. We have
+further proposed that CGLA-class reconfigurable architectures are
+strong candidates for the architectural property required for
+universal sensory grounding, though this candidacy rests on
+Conjecture~1, which remains unproven.
+
+This paper does not claim to have solved the hardware-grounding
+alignment problem. It claims to have made the problem formally
+precise. The research agenda that follows from this reformulation
+has three components.
+
+\textbf{For cognitive theory}: Provide a formal proof or disproof
+of Conjecture~1 (OP2). Determine whether exact homeomorphism is the
+correct universality condition, or whether the $\epsilon$-universality
+weakening is more appropriate (Section~4.2). Formalize Definition~5
+(OP1) so that the topological implementation map has a rigorous
+operational meaning.
+
+\textbf{For CGLA architecture research}: Characterize the
+configuration space of CGLA's reconfigurable interconnect formally,
+and determine whether it is dense in the metric space of biological
+sensory topologies (OP5). Provide at least one concrete instantiation
+of Definition~5---a specific CGLA configuration that implements the
+\textit{C.~elegans} chemosensory topology---as a proof of concept.
+Measure $d_{\mathrm{cog}}$ between CGLA and fixed-dataflow
+implementations of the same sensory grounding task using RSA as
+a proxy (OP3, OP4).
+
+\textbf{For the intersection}: As AI systems are increasingly
+deployed in embodied, multi-modal, and neuromorphic contexts, the
+alignment between hardware topology and sensory topology will become
+a principled design criterion. The cognitive distance $d_{\mathrm{cog}}$
+provides the formal foundation for this criterion. Realizing it as
+an engineering tool requires collaboration between the communities
+that this paper attempts to bridge.
+
+%-------------------------------------------------------------------
+\section*{Acknowledgments}
+%-------------------------------------------------------------------
+
+No funding was received for this work. The author thanks the CGLA research
+group at Nara Institute of Science and Technology for the foundational
+hardware work cited here.
+
+%-------------------------------------------------------------------
+\begin{thebibliography}{99}
+
+\bibitem{apple2025m5}
+Apple Inc. (2025). Apple M5 chip. \textit{Wikipedia},
+retrieved April 2026.
+\texttt{https://en.wikipedia.org/wiki/Apple\_M5}
+Note: No peer-reviewed publication describing M5 architecture
+is available at time of writing; the Wikipedia article
+aggregates specifications from Apple's technical documentation.
+For the M-series unified memory architecture
+as independently characterized, see \cite{brinkmann2025}.
+
+\bibitem{brinkmann2025}
+Brinkmann, M., et al. (2025). Apple vs.\ Oranges: Evaluating
+the Apple Silicon M-Series SoCs for HPC Performance and
+Efficiency. \textit{arXiv preprint arXiv:2502.05317}.
+
+\bibitem{akabe2025}
+Akabe, T., Le, V. T. D., \& Nakashima, Y. (2025). IMAX: A power-efficient
+multilevel pipelined CGLA and applications. \textit{IEEE Access},
+10.1109/ACCESS.2024.3524415.
+
+\bibitem{ando2026}
+Ando, T., Takeuchi, A., Eto, Y., Munakata, Y., \& Nakashima, Y. (2026).
+Q-Snap: Quantization-aware dynamic chunking for LLM execution on a CGLA.
+\textit{Proceedings of ICISN 2026}.
+
+\bibitem{ando2026_llm}
+Ando, T., \& Nakashima, Y. (2026). Energy-efficient Llama3 acceleration
+on a CGLA by offloading computational kernels. \textit{IEEE International
+System-On-Chip Conference (SOCC2025)} (poster).
+
+\bibitem{ando2025_whisper}
+Ando, T., Eto, Y., \& Nakashima, Y. (2025). Energy-efficient hardware
+acceleration of Whisper ASR on a CGLA. \textit{CANDAR'25}.
+\textbf{Best Paper Award}.
+
+\bibitem{takeuchi2025}
+Takeuchi, A., \& Nakashima, Y. (2025). Power efficient attention
+acceleration on CGLA. \textit{IEEE International System-On-Chip
+Conference (SOCC2025)}.
+
+\bibitem{minamoto2026}
+Minamoto, M. (2026). On the topology of symbol grounding: Sensory space
+structure as a determinant of cognitive representation.
+Preprint (not yet on arXiv). Available at:
+\texttt{https://github.com/minamominamoto/topology-of-grounding}
+
+\bibitem{harnad1990}
+Harnad, S. (1990). The symbol grounding problem. \textit{Physica D:
+Nonlinear Phenomena}, 42(1--3), 335--346.
+
+\bibitem{vietoris1922}
+Vietoris, L. (1922). Bereiche zweiter Ordnung. \textit{Monatshefte
+f\"{u}r Mathematik und Physik}, 32, 258--280.
+
+\bibitem{gromov1981}
+Gromov, M. (1981). Structures m\'{e}triques pour les vari\'{e}t\'{e}s
+riemanniennes. \textit{Textes Math\'{e}matiques}, 1. CEDIC/Fernand Nathan.
+
+\bibitem{jouppi2017}
+Jouppi, N. P., et al. (2017). In-datacenter performance analysis of a
+tensor processing unit. \textit{Proceedings of ISCA 2017}, 1--12.
+
+\bibitem{garcez2022}
+Garcez, A., \& Lamb, L. C. (2022). Neurosymbolic AI: The 3rd wave.
+\textit{Artificial Intelligence Review}, 56, 12387--12406.
+
+\bibitem{bargmann2006}
+Bargmann, C. I. (2006). Chemosensation in \textit{C. elegans}.
+\textit{WormBook}, 1--29.
+
+\bibitem{white1986}
+White, J. G., Southgate, E., Thomson, J. N., \& Brenner, S. (1986).
+The structure of the nervous system of the nematode
+\textit{Caenorhabditis elegans}. \textit{Philosophical Transactions
+of the Royal Society B}, 314(1165), 1--340.
+
+\bibitem{scheffer2020}
+Scheffer, L. K., et al. (2020). A connectome and analysis of the adult
+\textit{Drosophila} central brain. \textit{eLife}, 9, e57443.
+
+\bibitem{davies2021}
+Davies, M., et al. (2021). Advancing neuromorphic computing with Loihi:
+A survey of results and outlook. \textit{Proceedings of the IEEE},
+109(5), 911--934.
+
+\bibitem{furber2014}
+Furber, S. B., Galluppi, F., Temple, S., \& Plana, L. A. (2014).
+The SpiNNaker project. \textit{Proceedings of the IEEE}, 102(5), 652--665.
+
+\bibitem{schemmel2010}
+Schemmel, J., et al. (2010). A wafer-scale neuromorphic hardware system
+for large-scale neural modeling. \textit{Proceedings of ISCAS 2010},
+1947--1950.
+
+\bibitem{kriegeskorte2008}
+Kriegeskorte, N., Mur, M., \& Bandettini, P. (2008). Representational
+similarity analysis---connecting the branches of systems neuroscience.
+\textit{Frontiers in Systems Neuroscience}, 2, 4.
+
+\bibitem{biderman2023}
+Biderman, S., et al.\ (2023).
+Pythia: A suite for analyzing large language models across training and scaling.
+\textit{Proceedings of ICML 2023}.
+
+\bibitem{radford2019language}
+Radford, A., et al.\ (2019).
+Language models are unsupervised multitask learners.
+\textit{OpenAI Blog}, 1(8).
+
+\end{thebibliography}
+
+\end{document}

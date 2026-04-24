@@ -1,0 +1,673 @@
+\documentclass[12pt]{article}
+\usepackage[T1]{fontenc}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{hyperref}
+\usepackage{geometry}
+\usepackage{enumerate}
+\geometry{margin=1in}
+
+\newtheorem{definition}{Definition}
+\newtheorem{proposition}{Proposition}
+\newtheorem{corollary}{Corollary}
+\newtheorem{conjecture}{Conjecture}
+\newtheorem{remark}{Remark}
+
+\title{Abductive Accumulation:\\
+Why Interpretive Errors Are Not Eliminated, Only Suppressed}
+
+\author{Minamo Minamoto\\
+Independent\\
+\texttt{minamominamoto4f5683f6@gmail.com}}
+
+\date{April 2026}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+The correction model of abduction holds that erroneous hypotheses
+are detected and replaced.
+We argue that this model is structurally inadequate in a precise sense:
+prior interpretive frames are not overwritten but \emph{archived}.
+When a cognitive agent adopts a new hypothesis, the prior hypothesis
+is not eliminated; it is demoted to a latent layer that remains
+accessible and may be reactivated under appropriate conditions.
+What changes is not the presence of the prior frame but the
+\emph{selection rule} that determines which frame is foregrounded.
+We call this process \emph{abductive accumulation} and the resulting
+representational structure a \emph{layered interpretive stack}.
+This account explains why abductive error is not correctable:
+the error is not a missing piece but a latent frame competing for
+selection.
+The practical consequence is that reliable cognition requires not
+the ability to delete erroneous frames---which is impossible---but
+the ability to suppress their reactivation: a \emph{selection
+stability} condition distinct from but related to the negative
+abductive capability introduced in prior work
+\cite{minamoto2026overwrite}.
+We formalize the layered interpretive stack, the selection rule,
+and the conditions under which suppression fails, and derive
+implications for the understanding of cognitive bias, clinical
+reasoning errors, and the design of trustworthy AI systems.
+\end{abstract}
+
+\tableofcontents
+
+% ============================================================
+\section{Introduction}
+% ============================================================
+
+\paragraph{The correction assumption.}
+The standard model of abduction---inference to the best explanation
+\cite{harman1965}---presents hypothesis revision as correction:
+a prior hypothesis $h_t$ is found inadequate, and a new hypothesis
+$h_{t+1}$ is installed in its place.
+The prior hypothesis, on this picture, is simply gone.
+The agent's representational state after revision is characterized
+by $h_{t+1}$ alone; $h_t$ plays no further role.
+
+\paragraph{The residue phenomenon.}
+This picture conflicts with a well-documented class of phenomena.
+Human reasoners who have been corrected on a factual belief
+nonetheless revert to the prior belief under time pressure, emotional
+arousal, or situations structurally similar to those in which the
+prior belief was formed \cite{ecker2022}.
+Eyewitness testimony is unreliable not because new information
+is unavailable but because prior perceptual frames compete with
+later corrective accounts \cite{loftus1979}.
+Anchoring effects persist after anchor correction has been explicitly
+performed \cite{epley2001}.
+In each case, the erroneous prior frame is not absent---it is
+\emph{latent and reactivatable}.
+
+\paragraph{The central claim.}
+We argue that this class of phenomena reflects a structural feature
+of abductive cognition: interpretive frames are not overwritten but
+\emph{archived}.
+The representational state of a cognitive agent is not a single
+active hypothesis but a \emph{layered interpretive stack}---an
+ordered collection of frames, each associated with the evidence
+conditions under which it was formed.
+When a new frame is adopted, the prior frame is not deleted;
+it is pushed down the stack.
+What changes is the \emph{selection rule}: the function that
+determines, given current context, which frame is foregrounded
+for use in perception, classification, and inference.
+
+\paragraph{Consequence for the theory of abductive error.}
+If prior frames are archived rather than deleted, then abductive
+error is not correctable in the sense of the correction model.
+A corrective intervention that installs $h_{t+1}$ does not eliminate
+$h_t$; it adds $h_{t+1}$ to the stack and modifies the selection
+rule.
+Under conditions that activate the selection criteria associated
+with $h_t$---time pressure, high similarity to original encoding
+context, emotional state, attentional load---$h_t$ may be
+foregrounded again.
+The error persists as a latent selection risk.
+
+\paragraph{Relation to prior work.}
+This paper is the fourth in a series.
+Paper 1 \cite{minamoto2026topology} formalizes symbol grounding
+as a topological problem.
+Paper 2 \cite{minamoto2026cgla} establishes hardware implementation
+conditions for grounding.
+Paper 3 \cite{minamoto2026overwrite} introduces the overwrite model
+of abduction and negative abductive capability (NAC).
+The present paper refines Paper 3: the overwrite model is a
+first approximation in which the prior frame is treated as
+eliminated upon transition.
+We now show that the prior frame is in fact archived, and that
+this archival structure is the structural basis of abductive
+non-correctability.
+
+\begin{remark}[Relation to Paper 3: refinement, not refutation]
+Paper 3's overwrite model correctly describes the \emph{selection rule
+change} that occurs at commitment time $t^*$: a new interpretive frame
+$F_{t+1}$ is installed as the default-active frame, and the agent's
+subsequent behavior is governed by $F_{t+1}$ rather than $F_t$.
+This description remains accurate. The present paper adds a structural
+claim about what happens to $F_t$ after the overwrite: rather than
+being deleted, $F_t$ is archived in the interpretive stack and remains
+selectable under appropriate environmental conditions. Paper 3 provides
+the pre-commitment account (NAC as the capacity to withhold premature
+overwrite); the present paper provides the post-commitment account (SSC
+as the capacity to suppress reactivation of archived frames). The two
+papers are therefore complementary descriptions of different phases of
+the same process, not competing accounts.
+\end{remark}
+
+\medskip
+\noindent\textbf{Central thesis.}
+\emph{Abductive error is not fully correctable because prior interpretive
+frames are not overwritten but archived; what changes is only the
+selection rule. Reliable cognition therefore requires not the
+ability to delete erroneous frames but the ability to suppress
+their reactivation.}
+
+% ============================================================
+\section{The Layered Interpretive Stack}
+% ============================================================
+
+\subsection{From Single Frame to Stack}
+
+In Paper 3 \cite{minamoto2026overwrite}, the representational state
+of an agent was modeled as a single interpretive frame $F(R)$.
+An overwrite transition $R_t \to R_{t+1}$ was defined as a state
+change in which $F(R_{t+1}) \not\approx F(R_t)$.
+
+We now replace the single-frame model with a richer structure.
+
+\begin{definition}[Interpretive Stack]
+An interpretive stack $\mathcal{L} = (F_1, F_2, \ldots, F_n)$ is
+an ordered sequence of interpretive frames, where $F_1$ is the
+most recently adopted frame (top of stack) and $F_n$ is the
+earliest (bottom of stack).
+Each frame $F_k$ is associated with an \emph{acquisition context}
+$C_k$: the set of evidence conditions, attentional states, and
+temporal markers under which $F_k$ was formed.
+\end{definition}
+
+\begin{definition}[Selection Rule]
+A selection rule $\mathcal{S} : \mathcal{E} \to \{1, \ldots, n\}$
+maps the current environmental state $e \in \mathcal{E}$---including
+evidence quality, time pressure, emotional arousal, and contextual
+similarity to prior acquisition contexts---to an index $k$,
+selecting frame $F_k$ as the active interpretive frame for that
+moment.
+A canonical functional form is:
+\[
+\mathcal{S}(e) = \operatorname{arg\,max}_k\;
+\mathrm{softmax}_k\!\left(\frac{s(e,\, C_k)}{\tau}\right)
+\]
+where $C_k$ is the acquisition context of $F_k$,
+$s(\cdot,\cdot): \mathcal{E} \times \mathcal{E} \to [0,1]$ is a context-similarity function,
+and $\tau > 0$ is a temperature parameter controlling selection sharpness.
+High $\tau$ produces near-uniform selection (reactivation risk increases);
+low $\tau$ produces sharp selection of the contextually best-matching frame.
+\end{definition}
+
+\begin{remark}[The temperature parameter $\tau$ and cognitive load]
+The temperature parameter $\tau$ has a concrete cognitive interpretation.
+Under normal operating conditions---attentive processing, low time pressure,
+familiar but non-overlapping context---$\tau$ is small and selection is sharp:
+$F_1$ (the top-of-stack corrected frame) dominates with high probability.
+As cognitive load increases, $\tau$ rises and the selection distribution
+flattens, increasing the probability that archived frames $F_k$ ($k > 1$)
+are activated.
+Concretely, in LLMs: very long contexts require integrating over more
+tokens, effectively raising $\tau$ for context-similarity estimation;
+high-perplexity inputs lie far from the fine-tuning distribution,
+degrading $\delta(\cdot, C_1)$ and shifting probability toward earlier
+acquisition contexts; removal of chain-of-thought scaffolding removes
+the structured cue that normally suppresses $F_k$ activation.
+In biological agents: time pressure, emotional arousal, and divided
+attention correspond directly to elevated $\tau$ (degraded selection
+rule application), producing the load-dependent reactivation effect
+documented in the continued influence literature \cite{ecker2022}.
+This mapping from $\tau$ to observable cognitive conditions makes
+Prediction~3 (Load-Dependent Reactivation) directly testable:
+any experimental manipulation that increases $\tau$ should increase
+archived-frame reactivation rate.
+\end{remark}
+
+
+\begin{remark}
+The correction model corresponds to the degenerate case in which
+the stack has depth 1 at all times: each overwrite replaces the
+stack with a singleton containing only $F_{t+1}$.
+We deny this degeneracy.
+\end{remark}
+
+\subsection{Abductive Accumulation}
+
+\begin{definition}[Abductive Accumulation]
+An abductive transition is an \emph{accumulation} rather than an
+overwrite if the prior frame $F_t$ is archived (pushed onto the
+stack) rather than deleted when the new frame $F_{t+1}$ is adopted.
+The stack after accumulation is $(F_{t+1}, F_t, \ldots)$.
+\end{definition}
+
+\begin{proposition}[Non-Correctability and Reactivation Bound]
+\label{prop:non-correct}
+Let $\mathcal{L} = (F_{t+1}, F_t, \ldots)$ be the interpretive stack
+after a corrective accumulation at time $t+1$.
+Then:
+\begin{enumerate}[(i)]
+    \item $F_t$ remains present in $\mathcal{L}$ and can be selected
+    by $\mathcal{S}$ under environmental conditions $e$ such that
+    $\mathcal{S}(e) = k$ where $F_k = F_t$.
+    The ``correction'' does not eliminate $F_t$; it installs $F_{t+1}$
+    as the default-selected frame and modifies the selection rule.
+    \item The reactivation probability of $F_t$ is bounded away from
+    zero for all inputs $e$ (since $\mathrm{softmax}(\cdot) > 0$
+    always), and is highest when $s(e, C_t)$ is large---that is,
+    when $e$ closely resembles the acquisition context $C_t$ of $F_t$.
+    Formally, $P(\mathcal{S}(e) = k \mid F_k = F_t) > 0$ for all $e$,
+    with $P$ increasing monotonically in $s(e, C_t)$.
+    This bound cannot be driven to zero by modifying $F_{t+1}$
+    alone, since $\mathcal{S}$ responds to $s(e, C_t)$,
+    not to the content of $F_{t+1}$.
+\end{enumerate}
+Under conditions that activate $F_t$'s acquisition context $C_t$,
+$F_t$ may be foregrounded, reinstating the prior bias. The agent's
+ability to prevent this reactivation defines Selection Stability
+Capacity (SSC), introduced in Section~3.
+\end{proposition}
+
+\begin{corollary}
+Abductive error is not a deleted state.
+It is a latent frame with a non-zero selection probability under
+a subset of environmental conditions.
+``Correcting'' an abductive error reduces but does not eliminate
+this selection probability.
+\end{corollary}
+
+% ============================================================
+\section{Selection Instability as the Source of Bias}
+% ============================================================
+
+\begin{definition}[Selection Stability]
+A cognitive agent exhibits \emph{selection stability} with respect
+to hypothesis $h^*$ if the selection rule $\mathcal{S}$ assigns
+$h^*$'s frame to the top index across all relevant environmental
+conditions $e \in \mathcal{E}$:
+$\mathcal{S}(e) = 1$ for all $e \in \mathcal{E}$.
+\end{definition}
+
+\begin{proposition}[Bias as Selection Instability]
+\label{prop:bias-selection}
+Cognitive bias is not the presence of an erroneous frame in the
+stack but the failure of selection stability: the erroneous frame
+$F_\mathrm{err}$ is selected under a non-negligible subset of
+environmental conditions, producing systematic distortion of
+perception, classification, or inference under those conditions.
+\end{proposition}
+
+\begin{remark}
+This reformulation has a direct implication for debiasing
+interventions.
+Interventions that provide corrective information---installing
+a new frame $F^*$ at the top of the stack---are insufficient
+if they do not also modify the selection rule to suppress
+$F_\mathrm{err}$ reactivation.
+The corrective information may be present in the stack and yet
+fail to be selected under the conditions that matter most.
+\end{remark}
+
+% ============================================================
+\section{Relation to Negative Abductive Capability}
+% ============================================================
+
+In Paper 3 \cite{minamoto2026overwrite}, negative abductive
+capability (NAC) was defined as the capacity to maintain a
+suspension state---holding competing hypotheses without committing
+to any single frame---until evidence warrants commitment.
+
+The present account adds a new dimension.
+NAC, as defined in Paper 3, addresses the \emph{pre-commitment}
+phase: it prevents premature stacking.
+The present paper identifies a complementary \emph{post-commitment}
+capacity: the ability to suppress reactivation of archived frames
+after commitment has occurred.
+
+\begin{definition}[Selection Stability Capacity (SSC)]
+An agent possesses \emph{selection stability capacity} if it can
+maintain $\mathcal{S}(e) = 1$ (top-of-stack selection) across
+the range of environmental conditions $\mathcal{E}$ relevant to
+a target task, even when the stack contains archived frames
+with overlapping acquisition contexts.
+\end{definition}
+
+\begin{remark}
+NAC and SSC are distinct but related capacities.
+NAC prevents premature accumulation of frames with high error risk.
+SSC prevents reactivation of accumulated frames with high error risk.
+Together they constitute the structural conditions for reliable
+abductive cognition:
+\begin{enumerate}
+  \item[\textbf{(NAC)}] Suspend commitment until evidence warrants
+  stacking.
+  \item[\textbf{(SSC)}] Once committed, suppress reactivation of
+  archived error frames under conditions that would otherwise
+  trigger them.
+\end{enumerate}
+\end{remark}
+
+% ============================================================
+\section{Evidence and Illustrations}
+% ============================================================
+
+\subsection{The Continued Influence Effect}
+
+The continued influence effect \cite{ecker2022} refers to the
+persistence of misinformation in reasoning even after explicit
+correction.
+Subjects who are told that a belief was false continue to reason
+as if it were true, particularly under cognitive load.
+
+On the accumulation model: the corrective information installs a
+new frame $F^*$ at the top of the stack, but the prior frame
+$F_\mathrm{err}$ is archived with acquisition context $C_\mathrm{err}$.
+Under cognitive load---which reduces the computational resources
+available for selection rule application---the selection process
+defaults to simpler criteria, reactivating $F_\mathrm{err}$.
+
+\subsection{Anchoring and Adjustment}
+
+Anchoring effects \cite{epley2001} arise when an initial numerical
+estimate biases subsequent judgment even after adjustment information
+is provided.
+
+On the accumulation model: the anchor establishes $F_\mathrm{anchor}$
+as the initial frame. Adjustment installs $F_\mathrm{adj}$ but
+archives $F_\mathrm{anchor}$.
+Insufficient adjustment reflects incomplete modification of the
+selection rule: $\mathcal{S}$ continues to assign partial weight
+to $F_\mathrm{anchor}$ under conditions similar to the original
+anchoring context.
+
+\subsection{\textit{C. elegans}: Minimal Stack Depth}
+
+The predict-and-correct chemotaxis loop of \textit{C.~elegans}
+\cite{bargmann2006} may implement a minimal stack of depth 2:
+the current directional hypothesis and the most recent prior.
+The selection rule is implemented in the gain dynamics of the
+gradient detection circuit: when current evidence is strong,
+the top frame is selected; when evidence is weak or contradictory,
+the prior frame may contribute.
+
+This would explain why \textit{C.~elegans} exhibits partial
+reversion to prior trajectories under gradient reversal
+conditions---a prediction of the accumulation model that
+distinguishes it from the pure overwrite model.
+
+% ============================================================
+\section{Implications}
+% ============================================================
+
+\subsection{For Cognitive Science}
+
+The accumulation model predicts that:
+\begin{enumerate}
+  \item Debiasing interventions that provide only corrective
+  information will show incomplete and context-sensitive effects.
+  \item The magnitude of bias reactivation will correlate with
+  the similarity between current environmental conditions and
+  the original acquisition context $C_\mathrm{err}$.
+  \item High cognitive load, time pressure, and emotional arousal
+  will systematically increase reactivation probability by
+  degrading selection rule application.
+\end{enumerate}
+
+\subsection{For AI Systems}
+
+In artificial systems, the accumulation model predicts:
+\begin{enumerate}
+  \item Fine-tuning that installs a corrective frame $F^*$ does
+  not eliminate the prior frame $F_\mathrm{err}$ from the weight
+  space; it modifies the selection dynamics.
+  \item Under distribution shift conditions that resemble the
+  original training distribution, the prior frame may be
+  preferentially activated.
+  \item Reliable debiasing requires not only corrective training
+  but modification of the selection mechanism---e.g., via
+  attention reweighting or gating mechanisms that suppress
+  prior-context activation.
+\end{enumerate}
+
+\subsection{Connection to $d_\mathrm{cog}$}
+
+In the terms of \cite{minamoto2026topology}, the layered
+interpretive stack implies that the grounding-induced topology
+$\tau_A$ of an agent is not a single topology but a \emph{mixture}:
+a weighted combination of the topologies induced by each frame
+in the stack, with weights determined by the selection rule.
+Under the persistence-signature formulation of
+\cite[Def.~\ref{def:dcog-signature}]{minamoto2026topology}, the
+cognitive distance $d_\mathrm{cog}(A, B)$ between agents with
+different stack histories decomposes into components that track
+distinct aspects of this mixture: the $d_\mathrm{GH}$ component
+reflects worst-case distortion of the currently-selected frame,
+while the $d_\mathrm{bn}^{(k)}$ components reflect persistence-level
+alignment that integrates over the active stack region. Differences
+arising from divergent stack histories therefore show up as
+$d_\mathrm{bn}^{(k)}$ differences that would be invisible to a
+scalar GH measurement --- a concrete point of contact between the
+accumulation model of this paper and the measurement framework of
+Paper 1.
+
+More explicitly, a companion experiment reported in
+\cite[App.~\ref{app:overwrite-h1}]{minamoto2026overwrite} exhibits
+a closed-form relationship between the geometry of an agent's
+interpretive-frame $H_1$ cycle and its persistence lifetime: under
+a constructed metric setting, the lifetime is
+$1 - \sqrt{1 - \cos g(\Theta)}$, where $g$ is the maximal adjacent
+gap in the cycle. If the accumulation model is correct, stack
+histories that install new frames on top of old ones modify
+$g(\Theta)$ through the position of the newly-installed concept
+in the ring structure of the previously-dominant frame. Whether
+the new frame overwrites a critical node or a redundantly-placed
+one determines whether the prior frame's $H_1$ feature survives or
+collapses. This gives the accumulation/overwrite distinction a
+numerical signature that neither paper could supply in isolation
+from the measurement framework of Paper 1.
+
+The persistence signature is therefore not a dynamic extension of
+$d_\mathrm{cog}$ in the strong sense of being time-indexed; it is
+a \emph{structurally richer static snapshot} whose variation across
+stack-history-differing agents captures the accumulation-specific
+phenomena this paper addresses. A fully time-indexed extension
+(e.g.\ via zigzag persistence) is left to future work.
+
+% ============================================================
+\section{Pilot Empirical Evidence}
+\label{sec:pilot}
+% ============================================================
+
+The accumulation model predicts that prior representational structure
+persists after training rather than being deleted.
+We report a pilot study providing direct structural evidence for
+this claim in language models.
+
+\paragraph{Setup.}
+We applied RSA to Pythia-70m \cite{biderman2023} at three training
+stages: step~0 (random initialization), step~1000 (early training),
+step~143000 (reference).
+Pairwise concept dissimilarity matrices were computed over
+$n = 29$ probe concepts at hidden layers $\ell \in \{2, 4, 6\}$,
+averaged over three prompt templates.
+Structural alignment was measured via second-order Spearman
+correlation $\rho_\mathrm{cog}$.
+
+\paragraph{Results.}
+Three findings bear directly on the accumulation model.
+
+\smallskip
+\noindent\textbf{Finding 1: Monotone structural increase.}
+$\rho_\mathrm{cog}$ increases monotonically at all layers
+(L6: step-0 $= 0.017$; step-1000 $= 0.535$).
+If training were pure overwrite, step-0 and step-1000 would share
+no structural similarity with the reference beyond noise.
+The monotone increase is consistent with the accumulation model:
+prior structure is retained and built upon.
+
+\smallskip
+\noindent\textbf{Finding 2: Non-zero baseline.}
+Step-0 (random initialization) shows positive but weak correlation
+with the trained reference at all layers.
+Under the accumulation model, this reflects residual structural
+contribution of pre-training initialization to the final stack.
+Under the correction model, no such similarity is expected.
+
+\smallskip
+\noindent\textbf{Finding 3: Cross-architecture convergence.}
+$\rho_\mathrm{cog}(\text{GPT-2}, \text{Pythia-trained})
+\approx 0.42$ versus
+$\rho_\mathrm{cog}(\text{GPT-2}, \text{Pythia-step-0})
+\approx 0.10$ across all layers.
+Two architectures trained on different corpora converge to similar
+relational geometry, consistent with the accumulation model's
+prediction that training installs distribution-determined frames.
+
+\paragraph{Interpretation.}
+These results are consistent with the subsection on AI systems
+(Section~6.2): fine-tuning modifies selection dynamics without
+eliminating prior frame structure.
+Finding 2 provides an initial quantitative handle on
+``selection instability as the source of bias'' (Section~3):
+the residual structure of step-0 in the trained reference is
+precisely the accumulated prior that can be reactivated under
+conditions resembling the original acquisition context.
+Direct mechanistic tests (circuit persistence, context-dependent
+reactivation) remain as future work.
+All code is available at
+\url{https://github.com/minamominamoto/grounding-without-reality}.
+
+% ============================================================
+\section{Open Problems}
+% ============================================================
+
+\begin{description}
+  \item[OP1.] \textbf{Formal characterization of the selection rule.}
+    What is the computational form of $\mathcal{S}$?
+    Candidate: a softmax over frame-context similarity scores,
+    where similarity is computed between current environmental
+    state and each frame's acquisition context.
+
+  \item[OP2.] \textbf{Stack depth in biological systems.}
+    What is the effective stack depth in human cognition?
+    In \textit{C.~elegans}?
+    Is there a minimum depth required for flexible behavior?
+
+  \item[OP3.] \textbf{Measurement of reactivation probability.}
+    How can the selection probability of an archived frame be
+    measured empirically?
+    Candidate: vary environmental conditions systematically and
+    measure behavioral or neural signatures of frame reactivation.
+
+  \item[OP4.] \textbf{SSC and NAC joint optimization.}
+    What is the relationship between NAC (pre-commitment suspension)
+    and SSC (post-commitment suppression)?
+    Is there a tradeoff: systems that maintain longer suspension
+    may have shallower stacks and therefore lower reactivation risk?
+
+  \item[OP5.] \textbf{Fine-tuning as accumulation.}
+    Does fine-tuning in large language models implement accumulation
+    rather than correction?
+    If so, what are the signatures of prior-frame reactivation
+    in fine-tuned models, and how can they be measured via
+    mechanistic interpretability tools \cite{anthropic2025circuit}?
+\end{description}
+
+% ============================================================
+\section{Conclusion}
+% ============================================================
+
+The correction model of abduction is wrong in a precise and
+consequential way: it assumes that prior interpretive frames
+are deleted upon revision.
+They are not.
+They are archived in a layered interpretive stack, where they
+remain as latent selection risks.
+
+What we call ``correcting'' an abductive error is more accurately
+described as installing a new top-of-stack frame and modifying
+the selection rule.
+The error persists; what changes is its probability of being
+foregrounded.
+
+This has a direct implication for the theory of bias.
+Bias is not the presence of an erroneous frame.
+It is selection instability: the erroneous frame being selected
+under conditions where the correct frame should dominate.
+And it has a direct implication for the design of reliable
+cognitive systems, biological or artificial: the relevant
+capacity is not error deletion (impossible) but selection
+stability under adversarial conditions (achievable in principle).
+
+\medskip
+\noindent
+\textit{Abductive errors are not eliminated by correction.\\
+They persist as latent frames. They can only be suppressed.}
+
+% ============================================================
+\section*{Acknowledgments}
+% ============================================================
+
+No funding was received for this work.
+
+% ============================================================
+\begin{thebibliography}{99}
+
+\bibitem{minamoto2026topology}
+Minamoto, M. (2026).
+On the topology of symbol grounding: Sensory space structure as a
+determinant of cognitive representation.
+Preprint (not yet on arXiv).
+\url{https://github.com/minamominamoto/topology-of-grounding}
+
+\bibitem{minamoto2026cgla}
+Minamoto, M. (2026).
+Reconfigurable dataflow topology as a structural condition for
+universal sensory grounding.
+Preprint (not yet on arXiv).
+\url{https://github.com/minamominamoto/topology-of-grounding}
+
+\bibitem{minamoto2026overwrite}
+Minamoto, M. (2026).
+Abduction as overwrite: Negative capability as a structural
+condition for reliable inference.
+Preprint (not yet on arXiv).
+\url{https://github.com/minamominamoto/topology-of-grounding}
+
+\bibitem{harman1965}
+Harman, G. (1965).
+The inference to the best explanation.
+\textit{Philosophical Review}, 74(1), 88--95.
+
+\bibitem{ecker2022}
+Ecker, U. K. H., et al. (2022).
+The psychological drivers of misinformation belief and its resistance
+to correction.
+\textit{Nature Reviews Psychology}, 1, 13--29.
+
+\bibitem{loftus1979}
+Loftus, E. F., \& Palmer, J. C. (1974).
+Reconstruction of automobile destruction: An example of the
+interaction between language and memory.
+\textit{Journal of Verbal Learning and Verbal Behavior}, 13(5),
+585--589.
+
+\bibitem{epley2001}
+Epley, N., \& Gilovich, T. (2001).
+Putting adjustment back in the anchoring and adjustment heuristic:
+Differential processing of self-generated and experimenter-provided
+anchors.
+\textit{Psychological Science}, 12(5), 391--396.
+
+\bibitem{bargmann2006}
+Bargmann, C.~I. (2006).
+Chemosensation in \textit{C.~elegans}.
+\textit{WormBook}, 1--29.
+
+\bibitem{anthropic2025circuit}
+Lindsey, J., et al. (2025).
+Circuit tracing: Revealing computational graphs in language models.
+Anthropic Technical Report.
+\url{https://transformer-circuits.pub/2025/attribution-graphs/methods.html}
+
+\bibitem{biderman2023}
+Biderman, S., et al.\ (2023).
+Pythia: A suite for analyzing large language models across training and scaling.
+\textit{Proceedings of ICML 2023}.
+
+\bibitem{radford2019language}
+Radford, A., et al.\ (2019).
+Language models are unsupervised multitask learners.
+\textit{OpenAI Blog}, 1(8).
+
+\end{thebibliography}
+
+\end{document}
