@@ -36,7 +36,7 @@ received insufficient attention: does the topology of a hardware
 architecture constrain the class of sensory groundings it can
 faithfully implement? We propose a reformulation of this question
 using a topological framework introduced in a companion paper
-\cite{minamoto2026}, which formalizes symbol grounding as a
+\cite{minamoto2026topology}, which formalizes symbol grounding as a
 structural property of sensory space and introduces the
 Gromov--Hausdorff cognitive distance $d_{\mathrm{cog}}$ as a
 measure of grounding alignment between cognitive systems.
@@ -90,7 +90,7 @@ understanding---grounded in sensorimotor experience and capable of concept
 formation across diverse domains---then the hardware substrate may matter
 in ways that current accelerator design does not address.
 
-In a companion paper \cite{minamoto2026}, we proposed a structural
+In a companion paper \cite{minamoto2026topology}, we proposed a structural
 reformulation of symbol grounding: the topology of the sensory space
 in which grounding occurs may determine the geometry of the resulting
 cognitive representations, and two agents' grounding-induced topologies
@@ -115,7 +115,7 @@ candidate substrate for grounding-faithful AI systems.}
 \end{quote}
 
 We develop this proposal in three steps. Section~2 reviews the
-framework from \cite{minamoto2026}. Section~3 argues that fixed
+framework from \cite{minamoto2026topology}. Section~3 argues that fixed
 dataflow implies topological restriction under Definition~5.
 Section~4 presents CGLA-class reconfigurability as a structural
 candidate and compares it qualitatively to FPGAs and fixed-dataflow
@@ -143,10 +143,10 @@ alone.
 \section{Background: Sensory Space Topology and Grounding}
 %-------------------------------------------------------------------
 
-We briefly summarize the framework of \cite{minamoto2026}, to which we
+We briefly summarize the framework of \cite{minamoto2026topology}, to which we
 refer the reader for full definitions and proofs.
 
-\begin{definition}[Sensory Space \cite{minamoto2026}]
+\begin{definition}[Sensory Space \cite{minamoto2026topology}]
 The \emph{sensory space} of a cognitive agent $\mathcal{A}$ equipped with
 transduction channels $\{T_1, \ldots, T_n\}$ is the product space
 \[
@@ -156,7 +156,7 @@ equipped with the product topology, where each $A_i$ carries the topology
 induced by the neural activation metric of channel $T_i$.
 \end{definition}
 
-\begin{definition}[Grounding Map \cite{minamoto2026}]
+\begin{definition}[Grounding Map \cite{minamoto2026topology}]
 Let $\mathcal{K}(\mathcal{S}(\mathcal{A}))$ denote the hyperspace of
 nonempty closed subsets of $\mathcal{S}(\mathcal{A})$, equipped with the
 Vietoris topology \cite{vietoris1922}. A \emph{grounding map} is a
@@ -168,16 +168,16 @@ where $\Sigma$ is a symbol set and $G(\sigma)$ is the closed set of
 sensory states associated with symbol $\sigma$.
 \end{definition}
 
-\begin{definition}[Grounding-Induced Topology \cite{minamoto2026}]
+\begin{definition}[Grounding-Induced Topology \cite{minamoto2026topology}]
 The \emph{grounding-induced topology} $\tau_{\mathcal{A}}$ on $\Sigma$
 is the initial topology with respect to $G$: the coarsest topology making
 $\sigma \mapsto G(\sigma)$ continuous with respect to the Vietoris
 topology on $\mathcal{K}(\mathcal{S}(\mathcal{A}))$.
 \end{definition}
 
-The key result of \cite{minamoto2026} is that homeomorphism of
+The key result of \cite{minamoto2026topology} is that homeomorphism of
 grounding-induced topologies is \emph{sufficient} for complete intensional
-concept sharing (Conjecture~1 of \cite{minamoto2026}), while topological
+concept sharing (Conjecture~1 of \cite{minamoto2026topology}), while topological
 inequivalence implies incommensurability of intensional content. The
 Gromov--Hausdorff cognitive distance
 \[
@@ -483,7 +483,7 @@ reasons.
 
 First, biological sensory spaces are continuous, high-dimensional,
 and fiber-bundle-structured in many organisms (Section~3.2 of
-\cite{minamoto2026}), while CGLA computational graphs are finite and
+\cite{minamoto2026topology}), while CGLA computational graphs are finite and
 discrete. A faithful homeomorphism in the strict sense therefore
 requires discretization, which necessarily involves approximation.
 
@@ -605,7 +605,7 @@ this criterion favors CGLA-class architectures.
 
 Neuro-symbolic AI systems combine a neural perception layer with a
 symbolic reasoning layer \cite{garcez2022}. The topological alignment
-condition of \cite{minamoto2026}---that the symbolic layer's induced
+condition of \cite{minamoto2026topology}---that the symbolic layer's induced
 topology should be consistent with the neural layer's grounding
 topology---extends naturally to hardware: the hardware topology of the
 neural layer should be consistent with the sensory topology, and the
@@ -793,7 +793,7 @@ All code is available at
 
 We have proposed a structural reformulation of the hardware-grounding
 alignment problem. Within the topological framework of
-\cite{minamoto2026}, fixed-dataflow architectures incur a strictly
+\cite{minamoto2026topology}, fixed-dataflow architectures incur a strictly
 positive $d_{\mathrm{cog}}$ lower bound for sensory spaces not
 embeddable in their fixed computational graph topology---this is the
 paper's primary formal claim, conditional on Definition~5. We have
@@ -883,7 +883,7 @@ Takeuchi, A., \& Nakashima, Y. (2025). Power efficient attention
 acceleration on CGLA. \textit{IEEE International System-On-Chip
 Conference (SOCC2025)}.
 
-\bibitem{minamoto2026}
+\bibitem{minamoto2026topology}
 Minamoto, M. (2026). On the topology of symbol grounding: Sensory space
 structure as a determinant of cognitive representation.
 Preprint (not yet on arXiv). Available at:
