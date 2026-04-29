@@ -1,0 +1,813 @@
+\documentclass[12pt]{article}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{geometry}
+\usepackage{hyperref}
+\usepackage{natbib}
+\geometry{margin=1in}
+
+\newtheorem{definition}{Definition}
+\newtheorem{theorem}{Theorem}
+\newtheorem{proposition}{Proposition}
+\newtheorem{remark}{Remark}
+\newtheorem{conjecture}{Conjecture}
+\newtheorem{prediction}{Prediction}
+\newtheorem{example}{Example}
+
+\title{Behavioral Equivalence Without Representational Equivalence:\\
+Japanese Tit (\textit{Parus minor}) Communication\\
+as a Case Study in Metric Grounding}
+
+\author{Minamo Minamoto\\
+\small Independent Researcher\\
+\small ORCID: 0009-0002-1201-5704\\
+\small \href{https://github.com/minamominamoto/topology-of-grounding}{topology-of-grounding}
+}
+
+\date{April 2026}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+We interpret Suzuki and colleagues' experimental findings on Japanese tit
+(\textit{Parus minor}) communication within the framework of metric-geometric
+symbol grounding developed in Minamoto (2026a).
+Two aspects of Japanese tit communication serve as the primary test cases:
+(i) the referential grounding of alarm calls to external predator categories
+instantiates the formal notion of a grounding map
+$G: \Sigma \to \mathcal{F}(S(A))$
+assigning call types to distinct regions of sensory space;
+(ii) the combinatorial syntax of alarm call sequences
+(``ABC'' scan-for-danger notes concatenated with ``D'' approach-caller note
+produce a mobbing-like approach response qualitatively distinct
+from the response to either element alone)
+provides behavioral evidence for structured representational combination.
+We derive a quantitative prediction:
+RSA \citep{kriegeskorte2008} applied to neural data
+from Japanese tit auditory circuits should yield
+$d_\mathrm{cog}(\text{Japanese tit}, \text{human}) > 0$---
+measured as Gromov--Hausdorff distance between
+the metric spaces induced on $\Sigma$ by each agent's grounding map---
+even for calls whose referents are behaviourally equivalent across species.
+We further discuss the recently discovered wing-fluttering gesture
+and its implications for multimodal extensions of the framework.
+\end{abstract}
+
+\section{Introduction}
+
+The symbol grounding problem, as originally posed by \citet{harnad1990},
+asks whether the symbols manipulated by a cognitive system
+are causally connected to sensorimotor states,
+or merely formal tokens with no intrinsic meaning.
+In Minamoto (2026a) we argued that this binary formulation is insufficient:
+grounding is not a property a system either has or lacks,
+but a \emph{structural} property characterised by the metric geometry
+of the sensory space in which grounding occurs.
+Two agents that are both weakly grounded may nevertheless
+possess representations whose metric geometries are non-isometric,
+rendering complete conceptual sharing impossible.
+
+We follow \citet{seyfarth2003} in distinguishing
+\emph{functionally referential} calls---those that elicit
+context-specific responses in receivers---from
+fully \emph{semantically referential} signals in the human linguistic sense.
+The Japanese tit's alarm calls are functionally referential;
+the question of their deeper semantic status
+is precisely the kind of structural question the framework addresses.
+We use \emph{behavioral equivalence} to mean:
+two agents produce the same pattern of observable responses
+to a given call type (e.g.\ both show snake-inspection behaviour
+in response to the snake-specific call).
+
+The question of whether combinatorial structure in communication
+is specifically human is central to language evolution research
+\citep{hockett1960,hauser2002}.
+Recent experimental work by Suzuki and colleagues
+on Japanese tit (also referred to as Japanese great tit in the primary
+literature when classified as a subspecies of \textit{Parus major};
+here we follow the independent-species classification \textit{Parus minor})
+provides an unusually tractable empirical handle on these questions.
+Three findings are relevant:
+
+\begin{enumerate}
+\item Japanese tits produce referential alarm calls
+      that elicit different predator-searching behaviours
+      depending on call type \citep{suzuki2012}.
+      Snake-specific calls elicit ground-directed scanning behaviour;
+      other call types elicit horizontally-oriented scanning
+      appropriate to aerial and mammalian predators \citep{suzuki2012},
+      and coordinate multi-species mobbing responses \citep{suzuki2016mob}.
+
+\item Within the general alarm call system,
+      ``ABC'' notes (scan-for-danger) concatenated with a ``D'' note
+      (approach-the-caller) produce a mobbing-like approach response
+      qualitatively distinct from the response to either element alone
+      (note: the ``D'' note alone does elicit partial approach behaviour;
+      the combined ABC+D response integrates scanning and approach)
+      \citep{suzuki2016syn}.
+      The reverse ordering ``D\,+\,ABC'' does not elicit
+      the same combined response; this was confirmed using
+      novel heterospecific sequences \citep{suzuki2017ord}.
+
+\item Japanese tits use wing-fluttering gestures
+      to coordinate nest-box entry with their mates \citep{suzuki2024},
+      establishing gestural communication as a distinct signalling modality
+      in the species.
+\end{enumerate}
+
+Together these findings make the Japanese tit
+among the most richly characterised non-human vertebrates
+for the empirical study of grounding structure.
+In this paper we:
+(a) show how findings 1 and 2 map onto formal constructs
+in the grounding framework,
+(b) derive a novel quantitative prediction (Prediction~\ref{pred:rsa}),
+and (c) discuss finding 3 and directions for multimodal extensions.
+
+\section{Background: Metric Grounding Framework}
+
+We briefly recall the relevant definitions from Minamoto (2026a).
+Throughout, each channel activation space $A_i$
+is a compact metrizable space
+equipped with a specific metric $\rho_i$.
+
+\begin{definition}[Sensory Space]
+\label{def:sensory}
+For agent $A$ with transduction channels $\{T_1, \ldots, T_n\}$,
+the \emph{sensory space} is
+$(S(A), \rho_S)$ where $S(A) = \prod_{i=1}^n A_i$
+and $\rho_S$ is the $\ell^2$ product metric.
+The $\ell^2$ choice is conventional;
+conclusions about $d_\mathrm{cog} > 0$ may not be preserved
+under independent rescaling of metrics across agents
+(see Definition~\ref{def:cogdist}).
+\end{definition}
+
+\begin{definition}[Grounding Map and Symbol Distance]
+\label{def:groundmap}
+Let $\mathcal{F}(S(A))$ denote the hyperspace of
+non-empty closed subsets of $S(A)$,
+equipped with the Hausdorff metric $d_H$
+(which generates the Vietoris topology
+when $S(A)$ is compact metric \citep{beer1993}).
+A \emph{grounding map} is an injective function
+$G: \Sigma \to \mathcal{F}(S(A))$.
+When $\Sigma$ is finite (as in the Japanese tit application),
+any function from $\Sigma$ is automatically continuous
+(since finite sets carry the discrete topology);
+the injectivity condition ensures $d_A$ is a genuine metric.
+The \emph{symbol distance} induced by $G$ is:
+$d_A(\sigma, \sigma') = d_H(G_A(\sigma), G_A(\sigma'))$.
+\end{definition}
+
+\begin{remark}[Topological content for finite $\Sigma$]
+\label{rem:discrete}
+When $\Sigma$ is finite and $G$ is injective,
+the metric topology on $(\Sigma, d_A)$ is discrete,
+and any two finite sets of the same cardinality are homeomorphic.
+The substantive content of the framework
+in the finite-$\Sigma$ case lies in the \emph{metric geometry}
+of $(\Sigma, d_A)$---the distances between symbols---
+rather than in topological invariants.
+\end{remark}
+
+\begin{definition}[Cognitive Distance; v2 signature form]
+\label{def:cogdist}
+Since $|\Sigma|$ is finite, $(\Sigma, d_A)$ and $(\Sigma, d_B)$ are
+compact metric spaces. Following the persistence signature
+formulation of \cite[Def.~\ref{def:dcog-signature}]{minamoto2026topology},
+the \emph{cognitive distance} between agents $A$ and $B$ is the tuple
+\[
+  d_\mathrm{cog}(A, B)
+  = \Big(\,
+      d_\mathrm{GH}\bigl((\Sigma, d_A), (\Sigma, d_B)\bigr),\;
+      \{d_\mathrm{bn}^{(k)}(A, B)\}_{k \geq 0},\;
+      \{\mathrm{PD}_k(A), \mathrm{PD}_k(B)\}_{k \geq 1}\Big),
+\]
+where $d_\mathrm{bn}^{(k)}$ is the bottleneck distance between
+$k$-th Vietoris--Rips persistence diagrams. For the Japanese-tit
+prediction developed in this paper, we focus on the $d_\mathrm{GH}$
+and $d_\mathrm{bn}^{(0)}$ components, which reflect worst-case
+pairwise distortion and merge-structure alignment respectively;
+these are the components accessible with the twenty-five--symbol
+concept inventory of the tit call system. The $d_\mathrm{bn}^{(k)}$
+components for $k \geq 1$ require larger concept inventories to
+stabilize (see \cite[App.~\ref{app:dcog-h1}]{minamoto2026topology});
+their estimation is left to future work.
+\end{definition}
+
+The formal structure of $d_\mathrm{cog}$ decomposes into
+a mathematical theorem and a philosophical conjecture:
+
+\begin{theorem}[GH component and isometry; standard result]
+\label{thm:gh}
+The $d_\mathrm{GH}$ component of $d_\mathrm{cog}(A, B)$
+vanishes if and only if $(\Sigma, d_A)$ and $(\Sigma, d_B)$ are
+isometric.
+\end{theorem}
+
+\begin{remark}[On the signature components]
+The full tuple $d_\mathrm{cog}(A, B)$ vanishes (in all components)
+if and only if the two metric spaces are isometric; the
+$d_\mathrm{bn}^{(k)}$ components vanish in the isometric case
+by the stability theorem \cite{cohenSteiner2007}. The isometry
+criterion therefore remains the operative equivalence relation for
+complete grounding sharing, as in the v1 formulation; v2 adds
+intermediate structural invariants that are separately measurable
+when complete isometry fails.
+\end{remark}
+
+\begin{conjecture}[Metric Non-Isometry Conjecture]
+\label{conj:mni}
+If $(\Sigma, d_A) \not\cong (\Sigma, d_B)$
+(i.e.\ $d_\mathrm{cog}(A,B) > 0$),
+then $A$ and $B$ cannot completely share intensional conceptual content.
+Proof for the finite-$\Sigma$ case is given in Appendix~\ref{app:proof}.
+\end{conjecture}
+
+Theorem~\ref{thm:gh} is a standard result from metric geometry.
+Conjecture~\ref{conj:mni} is the substantive non-trivial claim.
+The proof (Appendix~\ref{app:proof}) constructs a specific
+similarity relation that is preserved under $d_A$ but not under $d_B$
+whenever the two spaces are non-isometric.
+
+\section{Japanese Tit Communication as Grounding Structure}
+
+\subsection{Referential Calls: Grounding Map Instantiation}
+
+The referential alarm call system of the Japanese tit \citep{suzuki2012}
+establishes a grounding map in which distinct call types
+are linked to distinct sensory-behavioural states.
+This categorical structure is consistent with the grounding map
+assigning elements of $\mathcal{F}(S(P))$ to call types
+such that snake and non-snake categories are well-separated
+in the symbol distance $d_P$:
+\[
+d_H(G(\sigma_\mathrm{snake}), G(\sigma_\mathrm{nonsnake})) \;\gg\;
+  d_H(G(\sigma_i), G(\sigma_j)) \quad \text{for }
+  \sigma_i, \sigma_j \text{ within the same category.}
+\]
+This is a claim about metric geometry, not topological homeomorphism type
+(Remark~\ref{rem:discrete}).
+
+\subsection{Call Concatenation: Structured Representational Combination}
+
+The combinatorial finding of \citet{suzuki2016syn}---
+that ``ABC'' notes concatenated with ``D'' note generate
+a mobbing-like approach response
+not predicted by either element alone---
+provides behavioral evidence for representational combination
+sensitive to element ordering.
+The order-dependence was confirmed using novel heterospecific sequences
+\citep{suzuki2017ord}.
+
+In the framework, this is modelled as a Merge operation
+$\mathrm{Merge}: \Sigma \times \Sigma \to \Sigma'$
+where the metric structure of $\Sigma'$ is not recovered
+from that of $\Sigma \times \Sigma$ under the product metric alone:
+the combined symbol ``ABC\,+\,D'' has a grounding region
+in $\mathcal{F}(S(P))$ that is not determined
+by $G(\sigma_\mathrm{ABC})$ and $G(\sigma_\mathrm{D})$ independently.
+
+We note explicitly what remains to be established:
+(i) the order-sensitive behavior is consistent with
+many computational accounts (associative learning,
+Bayesian sequence models, rule-based decoding)
+that do not require a grounding-map interpretation;
+(ii) for finite $\Sigma$, the notion of ``strictly finer topology''
+is not meaningful (all finite metric spaces have discrete topology);
+the correct claim is that Merge generates a symbol distance matrix
+on $\Sigma'$ not recoverable from the product distance on $\Sigma \times \Sigma$.
+We demonstrate this in the following toy example.
+
+\begin{example}[Merge non-recoverability]
+\label{ex:merge}
+Let $\Sigma = \{\sigma_\mathrm{ABC},\, \sigma_\mathrm{D}\}$
+and $\Sigma' = \{\sigma_\mathrm{ABC},\, \sigma_\mathrm{D},\, \sigma_\mathrm{ABC+D}\}$.
+
+Assign symbol distances consistent with the behavioural data:
+\begin{align*}
+d_P(\sigma_\mathrm{ABC},\, \sigma_\mathrm{D}) &= 1
+\end{align*}
+(the two calls are distinct and elicit distinct partial responses).
+Under the product metric on $\Sigma \times \Sigma$,
+the only available distances are derived from $d_P(\sigma_\mathrm{ABC}, \sigma_\mathrm{D}) = 1$:
+any reasonable product-metric extension to $\Sigma'$ would predict
+that $\sigma_\mathrm{ABC+D}$ lies at distance $\leq 1$ from both components,
+and that its distances to each component are determined by
+$d_P(\sigma_\mathrm{ABC}, \sigma_\mathrm{D})$ alone.
+
+The behavioural data, however, show that $\sigma_\mathrm{ABC+D}$ elicits
+a combined approach-plus-scanning response qualitatively distinct from
+either $\sigma_\mathrm{ABC}$ (scan only) or $\sigma_\mathrm{D}$ (approach only).
+This means $G_P(\sigma_\mathrm{ABC+D})$ is a new region of sensory-motor
+state space not equal to $G_P(\sigma_\mathrm{ABC}) \cup G_P(\sigma_\mathrm{D})$
+nor any convex combination thereof.
+Consequently:
+\[
+d_P(\sigma_\mathrm{ABC+D},\, \sigma_\mathrm{ABC})
+\;\neq\; d_P(\sigma_\mathrm{ABC+D},\, \sigma_\mathrm{D}),
+\]
+and neither value is recoverable from $d_P(\sigma_\mathrm{ABC}, \sigma_\mathrm{D})$
+under the product metric.
+The distance matrix of $(\Sigma', d_P)$ has strictly more structure
+than the product distance on $\Sigma \times \Sigma$ can supply.
+\end{example}
+
+The grounding-map account offers unified treatment of
+(i) referential grounding, (ii) order-sensitive combination, and
+(iii) cross-species representational divergence simultaneously.
+
+\section{The Main Prediction}
+
+\begin{prediction}[RSA Discrimination]
+\label{pred:rsa}
+Let $H$ (human) and $P$ (Japanese tit, \textit{Parus minor})
+be agents that have both learned the functional rule
+``snake call predicts snake-inspection behaviour.''
+Assume a shared symbol set $\Sigma$ (an idealization; see Remark below).
+Assuming Conjecture~\ref{conj:mni}:
+\[
+d_\mathrm{cog}(H, P) > 0.
+\]
+Operationally: RSA \citep{kriegeskorte2008}
+applied to neural responses in auditory cortex ($H$)
+and auditory forebrain NCM/CM \citep{mello1992} in ($P$)
+to the same set of referential calls
+will yield representational geometry matrices
+$\mathbf{R}_H, \mathbf{R}_P$ with
+$\|\mathbf{R}_H - \mathbf{R}_P\|_F > \delta_0$,
+where $\delta_0 > 0$ is pre-specified
+and calibrated against within-species baseline (item~4 below).
+\end{prediction}
+
+\begin{prediction}[Directional Distance Asymmetry]
+\label{pred:asymmetry}
+The non-isometry between $(\Sigma, d_P)$ and $(\Sigma, d_H)$
+has a specific directional structure, not merely a magnitude.
+
+In the tit ($P$), the snake-specific alarm call $\sigma_\mathrm{snake}$
+is associated with a qualitatively distinct sensorimotor response
+(ground-directed scanning and vertical retreat)
+that has no analogue in the aerial or mammalian predator responses.
+This predicts:
+\[
+d_P(\sigma_\mathrm{snake},\, \sigma_\mathrm{aerial})
+\;>\; d_P(\sigma_\mathrm{aerial},\, \sigma_\mathrm{mammal}).
+\]
+That is, in the tit's representational geometry, the snake call is
+more distant from other alarm calls than those alarm calls
+are from each other.
+
+In humans ($H$), who have no species-specific predator associations
+with the tit alarm calls, the three call types are processed
+as acoustically distinct but semantically equivalent unfamiliar signals.
+This predicts approximate symmetry:
+\[
+d_H(\sigma_\mathrm{snake},\, \sigma_\mathrm{aerial})
+\;\approx\; d_H(\sigma_\mathrm{aerial},\, \sigma_\mathrm{mammal})
+\;\approx\; d_H(\sigma_\mathrm{snake},\, \sigma_\mathrm{mammal}).
+\]
+
+The critical test is therefore not only whether
+$\|\mathbf{R}_H - \mathbf{R}_P\|_F > \delta_0$
+(Prediction~\ref{pred:rsa}),
+but whether the \emph{asymmetry}
+$d_P(\sigma_\mathrm{snake}, \sigma_\mathrm{aerial}) > d_P(\sigma_\mathrm{aerial}, \sigma_\mathrm{mammal})$
+is present in $\mathbf{R}_P$ and absent in $\mathbf{R}_H$.
+This directional prediction is specific to the
+sensorimotor-grounding account and cannot be derived
+from acoustic similarity alone.
+In particular, distances tied to survival-relevant categorical
+boundaries (predator vs.\ non-predator) are predicted to be
+\emph{conserved} as large distances in both species' RSA matrices,
+while distances between sequence-structured signals
+(e.g.\ $\sigma_\mathrm{ABC}$ vs.\ $\sigma_\mathrm{ABC+D}$)
+are expected to \emph{diverge} across species,
+since the combinatorial grounding is tit-specific.
+\end{prediction}
+
+\begin{remark}[Theoretical justification and the d\_cog/RSA gap]
+\label{rem:pred}
+The theoretical argument for $d_\mathrm{cog}(H,P) > 0$ is as follows.
+Japanese tit alarm calls are processed as conspecific warning signals
+coupled to specific sensorimotor contingencies
+(ground-scanning for snakes, fleeing from aerial predators, etc.);
+humans processing the same acoustic stimuli have no such
+species-specific predator associations.
+Consequently, the grounding maps $G_P$ and $G_H$
+embed the same $\Sigma$ into structurally different regions
+of $S(P)$ and $S(H)$ respectively,
+yielding $d_P \not\cong d_H$ and hence $d_\mathrm{cog}(H,P) > 0$
+under Conjecture~\ref{conj:mni}.
+Note that this argument concerns the \emph{auditory-sensorimotor}
+grounding of the calls, not visual system differences.
+
+The apparent logical gap between $d_\mathrm{cog}$ and
+$\|\mathbf{R}_H - \mathbf{R}_P\|_F$ (Frobenius norm of RSA matrix
+differences) noted in v1 of this paper is partially resolved by the
+signature formulation of Definition~\ref{def:cogdist}. Under the
+signature, the two most immediate components of
+$d_\mathrm{cog}(H, P)$---namely $d_\mathrm{GH}$ and
+$d_\mathrm{bn}^{(0)}$---are computable directly from the RSA-derived
+metric on $\Sigma$. The Frobenius difference
+$\|\mathbf{R}_H - \mathbf{R}_P\|_F$ bounds (and is bounded by) the
+$d_\mathrm{GH}$ component up to constants that depend on $|\Sigma|$;
+the $d_\mathrm{bn}^{(0)}$ component is stable under RSA matrix
+perturbation by the Cohen--Steiner stability theorem
+\cite{cohenSteiner2007}. The RSA operationalization therefore tracks
+well-defined signature components, not a single scalar
+$d_\mathrm{cog}$; Prediction~\ref{pred:rsa} below should be read as
+predicting non-vanishing of these tractable components, with the
+$d_\mathrm{bn}^{(k)}$ components for $k \geq 1$ requiring larger
+concept inventories than the twenty-five--symbol tit system
+provides.
+\end{remark}
+
+\begin{remark}[Shared-$\Sigma$ assumption]
+The prediction assumes a shared symbol set $\Sigma$,
+but the grounding of each call type is species-specific.
+Humans process the tit calls as unfamiliar acoustic stimuli,
+while tits process them as conspecific alarm signals.
+This non-equivalence means the measured $\mathbf{R}_H$
+reflects acoustic processing without predator-linked associations,
+while $\mathbf{R}_P$ reflects semantically loaded processing.
+The prediction is that even under this asymmetry,
+$d_\mathrm{cog}(H,P) > 0$ is detectable via RSA.
+\end{remark}
+
+A positive result supports Prediction~\ref{pred:rsa};
+a negative result would not definitively refute it
+given methodological challenges (modality mismatch between
+electrophysiology and fMRI/MEG, SNR differences, temporal resolution).
+Technical limitations are discussed in Minamoto (2026a, Section~5).
+
+\subsection{Experimental Design}
+
+\begin{enumerate}
+\item Neural recordings from Japanese tit auditory forebrain (NCM/CM)
+      during playback of the full call repertoire.
+      Note: Mello et al. \citeyearpar{mello1992} identified NCM
+      in the zebra finch (\textit{Taeniopygia guttata}); the region is
+      considered homologous across oscine songbirds
+      (Avian Brain Nomenclature Consortium; \citealt{jarvis2005}).
+\item fMRI/MEG recordings from human participants
+      hearing the same call stimuli.
+\item RSA \citep{kriegeskorte2008} between the two neural geometry matrices.
+\item Comparison with RSA baseline from two Japanese tit individuals.
+      The theory predicts $d_\mathrm{cog}(P_1, P_2) \ll d_\mathrm{cog}(H, P)$
+      for individuals with comparable ecological histories,
+      call repertoire experience, and predator exposure---
+      that is, within-species cognitive distance should be
+      significantly smaller than cross-species distance,
+      not necessarily zero.
+      $\delta_0$ is set as a fixed multiple of within-species variance,
+      pre-registered prior to data collection.
+\end{enumerate}
+
+\section{Proof of Concept: Cross-Agent RSA Discrimination}
+\label{sec:pilot}
+
+The experimental design of Section~4 requires cross-species RSA
+between Japanese tit auditory forebrain and human auditory cortex.
+Before that experiment can be conducted, it is essential to verify
+that the RSA-based $\rho_\mathrm{cog}$ protocol actually
+discriminates structurally distinct representational geometries.
+We report a proof-of-concept using language model checkpoints,
+which constitute agents with known structural differences.
+
+\paragraph{Design rationale.}
+The cross-species comparison (human vs.\ \textit{Parus minor})
+is structurally analogous to a cross-architecture comparison:
+both compare RSA dissimilarity matrices from agents that process
+the same stimuli through different grounding structures.
+If $\rho_\mathrm{cog}$ fails to discriminate cross-architecture
+differences in language models---where ground truth is available---
+it would provide little confidence for the cross-species case.
+
+\paragraph{Procedure.}
+We computed RSA dissimilarity matrices over $n = 29$ probe concepts
+at hidden layers $\ell \in \{2, 4, 6\}$ of two architecturally
+distinct models: Pythia-70m \citep{biderman2023} (fully trained,
+step~143000) and GPT-2 small \citep{radford2019language}.
+Three prompt templates were averaged to reduce surface-form bias.
+As a control, we compared GPT-2 with Pythia at random
+initialization (step~0), where architectural differences are
+unconfounded by training.
+
+\paragraph{Results.}
+Across all layers:
+\begin{itemize}
+  \item $\rho_\mathrm{cog}(\text{GPT-2}, \text{Pythia-trained})
+    \approx 0.42$ (trained agents sharing training-induced geometry)
+  \item $\rho_\mathrm{cog}(\text{GPT-2}, \text{Pythia-step-0})
+    \approx 0.10$ (trained vs.\ random: structurally distinct)
+\end{itemize}
+The protocol reliably discriminates between structurally similar
+and structurally distinct agents, with a fourfold ratio between
+the two conditions.
+
+\paragraph{Implications for the tit experiment.}
+This result establishes that $\rho_\mathrm{cog}$ has sufficient
+sensitivity to detect structural differences between agents
+sharing the same stimulus set but processed through different
+representational geometries---precisely the situation in the
+human vs.\ \textit{Parus minor} comparison.
+The expected cross-species $\rho_\mathrm{cog}(H, P)$ under
+the sensorimotor-grounding account should be substantially
+lower than within-species baseline $\rho_\mathrm{cog}(P_1, P_2)$,
+analogous to the trained vs.\ random contrast observed here.
+The within-species baseline in step~4 of the experimental design
+corresponds to the Pythia-trained vs.\ Pythia-trained control.
+All code is available at
+\url{https://github.com/minamominamoto/grounding-without-reality}.
+
+\section{Discussion}
+
+\subsection{Wing-Fluttering Gestures and Multimodal Extensions}
+
+The discovery of wing-fluttering gestures in Japanese tits \citep{suzuki2024}
+suggests extending the framework to settings where
+auditory and visual channels interact in a context-dependent manner.
+The ``after you'' coordination function of this gesture
+motivates, in principle, a fiber bundle model of the sensory space.
+Any fiber bundle over a finite discrete context space
+is trivially trivializable; non-trivial bundle structure
+would require the context space to carry continuous topological structure,
+which remains to be formalised from the present data.
+This is an open problem (Open Problem 2 of Minamoto 2026a).
+
+\subsection{Combinatorial Structure in Animal Communication}
+
+The question of whether combinatorial structure in signalling
+is specifically human is central to language evolution research
+\citep{hockett1960,hauser2002}.
+The Japanese tit data are consistent with the hypothesis
+that combinatorial grounding structure---
+meaning generated by ordered combination
+rather than by individual elements---
+represents a convergent solution under predator-diversity pressure.
+This hypothesis requires comparative data from independent lineages
+to be tested; the present paper offers one consistent case.
+
+\section{Conclusion}
+
+Japanese tit communication research provides
+an empirical anchor for the metric grounding framework.
+The referential alarm call system \citep{suzuki2012,suzuki2016mob}
+is consistent with the formal grounding map $G: \Sigma \to \mathcal{F}(S(A))$
+assigning call types to distinct regions of sensory space.
+Call concatenation \citep{suzuki2016syn,suzuki2017ord}
+provides behavioral evidence for metric combination structure
+not recoverable from the product of individual call geometries.
+The main quantitative prediction---
+$d_\mathrm{cog}(\text{human}, \text{Japanese tit}) > 0$
+conditional on Conjecture~\ref{conj:mni}---
+is directly testable via RSA \citep{kriegeskorte2008},
+subject to the d$_\mathrm{cog}$/RSA approximation noted in
+Remark~\ref{rem:pred}.
+
+\appendix
+\section{Behavioral Equivalence Does Not Imply Metric Equivalence}
+\label{app:proposition}
+
+\begin{proposition}[Behavioral Equivalence Does Not Imply Metric Equivalence]
+\label{prop:main}
+Let $\Sigma$ be a finite set of symbols,
+and let two agents $A$ and $B$ share an identical
+stimulus-response mapping $f_A = f_B : \Sigma \to \mathcal{R}$.
+There exist grounding maps $G_A, G_B$ inducing metric spaces
+$(\Sigma, d_A)$ and $(\Sigma, d_B)$ such that:
+\begin{enumerate}
+  \item $f_A = f_B$ \emph{(behavioral equivalence)},
+  \item $(\Sigma, d_A)$ and $(\Sigma, d_B)$ are \emph{not isometric}.
+\end{enumerate}
+\end{proposition}
+
+\begin{proof}
+Let $\Sigma = \{s_1, s_2, s_3\}$ with identical response mapping
+$f(s_i) = r_i$ for $i = 1, 2, 3$.
+
+Define $d_A$ (collinear geometry):
+\[
+d_A(s_1, s_2) = 1,\quad
+d_A(s_2, s_3) = 1,\quad
+d_A(s_1, s_3) = 2.
+\]
+
+Define $d_B$ (equilateral geometry):
+\[
+d_B(s_1, s_2) = 1,\quad
+d_B(s_2, s_3) = 1,\quad
+d_B(s_1, s_3) = 1.
+\]
+
+Both $d_A$ and $d_B$ are valid metrics on $\Sigma$.
+Both preserve the same stimulus-response mapping $f$.
+Yet $(\Sigma, d_A)$ and $(\Sigma, d_B)$ are not isometric:
+in $(\Sigma, d_A)$, the pair $(s_1, s_3)$ achieves the unique
+maximum distance 2, while in $(\Sigma, d_B)$ all pairs are
+equidistant at 1.
+No bijection $\phi: \Sigma \to \Sigma$ can simultaneously preserve
+all pairwise distances, so the spaces are non-isometric.
+Therefore behavioral equivalence ($f_A = f_B$) does not determine
+representational geometry.
+\end{proof}
+
+\begin{remark}[Connection to the Japanese tit]
+In the Japanese tit application, $s_1, s_2, s_3$ correspond to
+$\sigma_\mathrm{snake}, \sigma_\mathrm{aerial}, \sigma_\mathrm{mammal}$.
+The tit and the human share the behavioral mapping in the sense that
+both can be trained to respond differentially to the three call types.
+Proposition~\ref{prop:main} establishes that this shared mapping
+does not determine whether the underlying representational geometries
+are equivalent---which is precisely the claim of
+Conjecture~\ref{conj:mni} and the content of
+Predictions~\ref{pred:rsa}--\ref{pred:asymmetry}.
+\end{remark}
+
+\section{Proof of Conjecture~\ref{conj:mni} for Finite Symbol Sets}
+\label{app:proof}
+
+We prove that non-isometry of finite metric spaces implies the
+existence of a similarity relation present in one space but not the other,
+constituting a conceptual content that cannot be completely shared.
+
+\paragraph{Setup.}
+Let $|\Sigma| = n$ and let $(\Sigma, d_A)$ and $(\Sigma, d_B)$
+be finite metric spaces on the same symbol set.
+Define the \emph{similarity ordering} of agent $A$ as the preorder
+$\preceq_A$ on unordered pairs $\{{\sigma, \sigma'}\} \subseteq \Sigma$:
+\[
+\{\sigma, \sigma'\} \preceq_A \{\tau, \tau'\}
+\iff d_A(\sigma, \sigma') \leq d_A(\tau, \tau').
+\]
+This ordering encodes all pairwise similarity relations derivable
+from the grounding map: $\sigma$ and $\sigma'$ are at least as similar
+as $\tau$ and $\tau'$ iff their grounding regions are at least as close.
+
+\paragraph{Definition (complete intensional sharing).}
+Agents $A$ and $B$ \emph{completely share intensional conceptual content}
+with respect to $\Sigma$ if there exists a bijection $\phi: \Sigma \to \Sigma$
+such that for all pairs $\{\sigma, \sigma'\}$ and $\{\tau, \tau'\}$:
+\[
+\{\sigma, \sigma'\} \preceq_A \{\tau, \tau'\}
+\iff \{\phi(\sigma), \phi(\sigma')\} \preceq_B \{\phi(\tau), \phi(\tau')\}.
+\]
+That is, every similarity ordering relation that $A$ represents
+is preserved under $\phi$ in $B$, and vice versa.
+
+\paragraph{Lemma.}
+For finite metric spaces, complete intensional sharing (as defined above)
+holds if and only if $(\Sigma, d_A)$ and $(\Sigma, d_B)$ are isometric.
+
+\paragraph{Proof.}
+($\Rightarrow$) Suppose complete intensional sharing holds via bijection $\phi$.
+For any $\sigma, \sigma'$, the strict ordering
+$\{\sigma, \sigma'\} \prec_A \{\tau, \tau'\}$ iff
+$\{\phi(\sigma), \phi(\sigma')\} \prec_B \{\phi(\tau), \phi(\tau')\}$
+holds for all pairs by assumption.
+Since $\Sigma$ is finite, the full distance matrix $[d_A(\sigma_i, \sigma_j)]$
+is determined by the similarity ordering (up to a common positive scale
+if the ordering is total; exactly, if the ordering distinguishes all pairs).
+Therefore $\phi$ preserves the metric structure, making the spaces isometric.
+
+($\Leftarrow$) Suppose $(\Sigma, d_A)$ and $(\Sigma, d_B)$ are not isometric.
+Then for every bijection $\phi: \Sigma \to \Sigma$,
+there exists at least one pair of pairs such that
+$d_A(\sigma, \sigma') < d_A(\tau, \tau')$ but
+$d_B(\phi(\sigma), \phi(\sigma')) \geq d_B(\phi(\tau), \phi(\tau'))$,
+or vice versa.
+This pair constitutes a similarity relation represented by $A$
+(``$\sigma$ is more similar to $\sigma'$ than $\tau$ is to $\tau'$'')
+that $B$ does not represent under $\phi$ in the same direction.
+Since $\phi$ was arbitrary, no bijection achieves complete sharing.
+Therefore $A$ and $B$ cannot completely share intensional conceptual
+content. $\square$
+
+\paragraph{Application to Japanese tit.}
+Concretely: the tit's alarm call system gives
+$d_P(\sigma_\mathrm{snake}, \sigma_\mathrm{aerial}) >
+d_P(\sigma_\mathrm{aerial}, \sigma_\mathrm{mammal})$
+(Prediction~\ref{pred:asymmetry}).
+If humans process the same calls with
+$d_H(\sigma_\mathrm{snake}, \sigma_\mathrm{aerial}) \approx
+d_H(\sigma_\mathrm{aerial}, \sigma_\mathrm{mammal})$,
+the two metric spaces are not isometric.
+By the Lemma, the similarity relation
+``snake call is more distinct from aerial calls
+than aerial calls are from mammal calls''
+is represented in the tit's grounding structure and not in the human's.
+This is the conceptual content that cannot be completely shared.
+
+\section*{Acknowledgements}
+
+The author thanks the topology-of-grounding project
+(\url{https://github.com/minamominamoto/topology-of-grounding})
+for the theoretical framework developed in the companion papers.
+
+\bibliographystyle{plainnat}
+\begin{thebibliography}{10}
+
+\bibitem[Beer(1993)]{beer1993}
+Beer, G. (1993).
+\textit{Topologies on Closed and Closed Convex Sets}.
+Dordrecht: Kluwer Academic Publishers.
+\href{https://doi.org/10.1007/978-94-015-8149-3}{doi:10.1007/978-94-015-8149-3}
+
+\bibitem[Harnad(1990)]{harnad1990}
+Harnad, S. (1990).
+The symbol grounding problem.
+\textit{Physica D}, 42(1--3), 335--346.
+\href{https://doi.org/10.1016/0167-2789(90)90087-6}{doi:10.1016/0167-2789(90)90087-6}
+
+\bibitem[Jarvis et al.(2005)]{jarvis2005}
+Jarvis, E.~D., G{\"u}nt{\"u}rk{\"u}n, O., Bruce, L., Csillag, A.,
+Karten, H., Kuenzel, W., \ldots\ Butler, A.~B. (2005).
+Avian brains and a new understanding of vertebrate brain evolution.
+\textit{Nature Reviews Neuroscience}, 6(2), 151--159.
+\href{https://doi.org/10.1038/nrn1606}{doi:10.1038/nrn1606}
+
+\bibitem[Hauser et al.(2002)]{hauser2002}
+Hauser, M.~D., Chomsky, N., \& Fitch, W.~T. (2002).
+The faculty of language: what is it, who has it, and how did it evolve?
+\textit{Science}, 298(5598), 1569--1579.
+\href{https://doi.org/10.1126/science.298.5598.1569}{doi:10.1126/science.298.5598.1569}
+
+\bibitem[Hockett(1960)]{hockett1960}
+Hockett, C.~F. (1960).
+The origin of speech.
+\textit{Scientific American}, 203(3), 88--96.
+\href{https://doi.org/10.1038/scientificamerican0960-88}{doi:10.1038/scientificamerican0960-88}
+
+\bibitem[Kriegeskorte et al.(2008)]{kriegeskorte2008}
+Kriegeskorte, N., Mur, M., \& Bandettini, P. (2008).
+Representational similarity analysis---connecting the branches
+of systems neuroscience.
+\textit{Frontiers in Systems Neuroscience}, 2, 4.
+\href{https://doi.org/10.3389/neuro.06.004.2008}{doi:10.3389/neuro.06.004.2008}
+
+\bibitem[Mello et al.(1992)]{mello1992}
+Mello, C.~V., Vicario, D.~S., \& Clayton, D.~F. (1992).
+Song presentation induces gene expression in the songbird forebrain.
+\textit{Proceedings of the National Academy of Sciences}, 89(15), 6818--6822.
+\href{https://doi.org/10.1073/pnas.89.15.6818}{doi:10.1073/pnas.89.15.6818}
+
+\bibitem[Minamoto(2026a)]{minamoto2026a}
+Minamoto, M. (2026a).
+On the topology of symbol grounding:
+sensory space structure as a determinant of cognitive representation.
+Preprint.
+\url{https://github.com/minamominamoto/topology-of-grounding}
+
+\bibitem[Seyfarth \& Cheney(2003)]{seyfarth2003}
+Seyfarth, R.~M., \& Cheney, D.~L. (2003).
+Signalers and receivers in animal communication.
+\textit{Annual Review of Psychology}, 54, 145--173.
+\href{https://doi.org/10.1146/annurev.psych.54.101601.145121}{doi:10.1146/annurev.psych.54.101601.145121}
+
+\bibitem[Suzuki(2012)]{suzuki2012}
+Suzuki, T.~N. (2012).
+Referential mobbing calls elicit different predator-searching behaviours
+in Japanese great tits.
+\textit{Animal Behaviour}, 84(1), 53--57.
+\href{https://doi.org/10.1016/j.anbehav.2012.03.030}{doi:10.1016/j.anbehav.2012.03.030}
+
+\bibitem[Suzuki(2016a)]{suzuki2016mob}
+Suzuki, T.~N. (2016a).
+Referential calls coordinate multi-species mobbing
+in a forest bird community.
+\textit{Journal of Ethology}, 34, 79--84.
+\href{https://doi.org/10.1007/s10164-015-0449-1}{doi:10.1007/s10164-015-0449-1}
+
+\bibitem[Suzuki et al.(2016b)]{suzuki2016syn}
+Suzuki, T.~N., Wheatcroft, D., \& Griesser, M. (2016b).
+Experimental evidence for compositional syntax in bird calls.
+\textit{Nature Communications}, 7, 10986.
+\href{https://doi.org/10.1038/ncomms10986}{doi:10.1038/ncomms10986}
+
+\bibitem[Suzuki et al.(2017)]{suzuki2017ord}
+Suzuki, T.~N., Wheatcroft, D., \& Griesser, M. (2017).
+Wild birds use an ordering rule to decode novel call sequences.
+\textit{Current Biology}, 27, 2331--2336.
+\href{https://doi.org/10.1016/j.cub.2017.06.031}{doi:10.1016/j.cub.2017.06.031}
+
+\bibitem[Suzuki \& Sugita(2024)]{suzuki2024}
+Suzuki, T.~N., \& Sugita, N. (2024).
+The `after you' gesture in a bird.
+\textit{Current Biology}, 34, R231--R232.
+\href{https://doi.org/10.1016/j.cub.2024.01.007}{doi:10.1016/j.cub.2024.01.007}
+
+\bibitem[Biderman et al.(2023)]{biderman2023}
+Biderman, S., et al.\ 2023.
+Pythia: A suite for analyzing large language models across training and scaling.
+\textit{Proceedings of ICML 2023}.
+
+\bibitem[Radford et al.(2019)]{radford2019language}
+Radford, A., et al.\ 2019.
+Language models are unsupervised multitask learners.
+\textit{OpenAI Blog}, 1(8).
+
+\end{thebibliography}
+
+\end{document}

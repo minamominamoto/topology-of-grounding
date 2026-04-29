@@ -1,0 +1,138 @@
+%-------------------------------------------------------------------
+% Appendix: RSA-based numerical illustration of d_cog
+% This appendix can be inserted into topology_grounding.tex or
+% grounding_without_reality.tex to address the operationalisability
+% of d_cog.
+%-------------------------------------------------------------------
+
+\appendix
+\section{Numerical Illustration of $d_{\mathrm{cog}}$ via RSA}
+\label{app:dcog-numerical}
+
+We demonstrate that $d_{\mathrm{cog}}$ is numerically tractable via
+Representational Similarity Analysis (RSA)~\cite{kriegeskorte2008},
+addressing the concern that the Gromov--Hausdorff formulation is
+mathematically defined but empirically inaccessible.
+
+\subsection*{Setup}
+
+Let $\Sigma = \{\textsc{flower}, \textsc{food}, \textsc{same},
+\textsc{different}, \textsc{zero}\}$. We consider three agents:
+
+\begin{itemize}[noitemsep]
+  \item $\mathcal{A}_{\mathrm{bee}}$: honeybee, UV- and
+    olfactory-dominant sensory space;
+  \item $\mathcal{A}_{\mathrm{hum}}$: human, colour-opponent and
+    proprioceptive-dominant;
+  \item $\mathcal{A}_{\mathrm{llm}}$: a multimodal language model,
+    text-cooccurrence-dominant with weak sensory channels.
+\end{itemize}
+
+Each agent's grounding map $G: \Sigma \to \mathcal{K}(\mathcal{S})$ is
+approximated by a centroid vector in a six-dimensional sensory channel
+space (UV, olfactory, colour-opponent, tactile, proprioceptive,
+text-cooccurrence). The RSA matrix $\mathrm{RSA}_{\mathcal{A}}$ is the
+cosine-similarity matrix over these centroid vectors, and the induced
+metric on $\Sigma$ is $d_{\mathcal{A}}(\sigma_i, \sigma_j) =
+\sqrt{1 - \mathrm{RSA}_{\mathcal{A}}(i,j)}$ (angular distance).
+
+\subsection*{Results}
+
+Table~\ref{tab:dist} shows the induced pairwise distances on $\Sigma$.
+
+\begin{table}[ht]
+\centering
+\small
+\caption{RSA-induced distances on $\Sigma$ for three agents.
+Entries are $d_{\mathcal{A}}(\sigma_i,\sigma_j)$ (angular distance,
+range $[0,1]$).}
+\label{tab:dist}
+\begin{tabular}{l|ccccc}
+\hline
+\textbf{Bee} & flower & food & same & diff. & zero \\
+\hline
+flower    & 0.000 & 0.229 & 0.505 & 0.505 & 0.244 \\
+same      & 0.505 & 0.388 & 0.000 & \textbf{0.000} & 0.310 \\
+\hline
+\textbf{Human} & & & & & \\
+\hline
+flower    & 0.000 & 0.344 & 0.745 & 0.727 & 0.831 \\
+same      & 0.745 & 0.705 & 0.000 & \textbf{0.025} & 0.160 \\
+\hline
+\textbf{LLM} & & & & & \\
+\hline
+flower    & 0.000 & 0.131 & 0.297 & 0.297 & 0.343 \\
+same      & 0.297 & 0.337 & 0.000 & \textbf{0.000} & 0.112 \\
+\hline
+\end{tabular}
+\end{table}
+
+Approximating $d_{\mathrm{GH}}$ by exhaustive minimisation over all
+$5! = 120$ bijections $f: \Sigma \to \Sigma$:
+
+\[
+d_{\mathrm{cog}}(\mathcal{A}_{\mathrm{bee}},\,\mathcal{A}_{\mathrm{hum}})
+  = 0.208, \quad
+d_{\mathrm{cog}}(\mathcal{A}_{\mathrm{hum}},\,\mathcal{A}_{\mathrm{llm}})
+  = 0.238, \quad
+d_{\mathrm{cog}}(\mathcal{A}_{\mathrm{bee}},\,\mathcal{A}_{\mathrm{llm}})
+  = 0.099.
+\]
+
+\subsection*{Observations}
+
+Three structural findings are noteworthy.
+
+\textbf{(1) \textsc{same}/\textsc{different} collapse.}
+Both the bee and the LLM assign distance $0.000$ to the pair
+$(\textsc{same}, \textsc{different})$, but for structurally distinct
+reasons. In the bee, the olfactory--UV space provides no dimension along
+which the relational contrast is grounded sensorimotorly; behavioural
+evidence for the bee's same/different discrimination
+\cite{giurfa2001} therefore reflects a functional capacity that is not
+accompanied by topological separation in the grounding-induced metric.
+In the LLM, the collapse arises from the absence of a closed
+action-consequence loop: without resistance, the two symbols are
+distinguished only by text-cooccurrence patterns, which are nearly
+symmetric. The human exhibits a small but nonzero separation
+($d = 0.025$), reflecting proprioceptive grounding of relational
+matching.
+
+\textbf{(2) Human--LLM gap is the largest.}
+$d_{\mathrm{cog}}(\mathcal{A}_{\mathrm{hum}},
+\mathcal{A}_{\mathrm{llm}}) = 0.238 >
+d_{\mathrm{cog}}(\mathcal{A}_{\mathrm{bee}},
+\mathcal{A}_{\mathrm{hum}}) = 0.208$.
+The LLM's grounding topology is structurally more distant from the
+human than the bee is, despite the LLM having nominal access to visual
+modalities. This supports the claim of Section~4.2 that adding sensory
+channels does not automatically reduce $d_{\mathrm{cog}}$: the
+cross-modal integration architecture matters.
+
+\textbf{(3) Operationalisability.}
+The computation above uses only (i) a choice of sensory channel
+dimensions, (ii) a method for estimating grounding centroids (here,
+assumed; in practice, neural activation patterns via RSA), and (iii)
+angular distance and exhaustive bijection search. For larger
+$|\Sigma|$, the bijection search can be replaced by approximation
+algorithms for GH distance \cite{memoli2007}. The calculation is
+therefore tractable in principle with standard neuroscientific
+measurements.
+
+\paragraph{Limitations.}
+The channel vectors used here are illustrative assumptions, not
+empirical measurements. The point of this appendix is to demonstrate
+that $d_{\mathrm{cog}}$ admits numerical instantiation, not to make
+empirical claims about these specific agents. Empirical instantiation
+via RSA on neural or model activation data is the subject of OP1.
+
+\paragraph{Note on higher-dimensional components.}
+The five-concept inventory used here is sufficient to illustrate the
+$d_{\mathrm{GH}}$ and $d_{\mathrm{bn}}^{(0)}$ components of the
+persistence signature
+(Definition~\ref{def:dcog-signature}), but cannot support
+$d_{\mathrm{bn}}^{(k)}$ for $k \geq 1$: the Vietoris--Rips filtration
+of a five-point metric space produces at most trivial $H_1$ diagrams.
+Appendix~\ref{app:dcog-h1} extends the construction to a sixteen-concept
+inventory at which $H_1$ features emerge, and characterises the
+detection threshold quantitatively.
