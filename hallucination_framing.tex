@@ -1,0 +1,1190 @@
+\documentclass[12pt]{article}
+
+% arXiv categories: cs.AI cs.CL cs.LG
+\usepackage{amsmath, amssymb, amsthm}
+\usepackage{geometry}
+\usepackage{cite}
+\usepackage{enumitem}
+\usepackage{hyperref}
+\usepackage{booktabs}
+
+\geometry{margin=1in}
+
+\newtheorem{definition}{Definition}
+\newtheorem{proposition}{Proposition}
+\newtheorem{remark}{Remark}
+\newtheorem{corollary}{Corollary}
+
+\title{Hallucination as Frame Misactivation:\\
+A Structural Account of LLM Error Under the\\
+Interpretive Stack Model}
+
+\author{Minamo Minamoto\\
+\small Independent\\
+\small \texttt{minamominamoto4f5683f6@gmail.com}\\
+\small \texttt{https://orcid.org/0009-0002-1201-5704}}
+
+\date{April 2026}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+Large language model (LLM) hallucination is standardly explained as
+a failure of uncertainty calibration: the model generates confident
+output in regions of low epistemic warrant. We argue that this
+account, while partially correct, is structurally incomplete. Many
+hallucination types---including contextual confabulation, role
+confusion, narrative overcompletion, and cross-domain contamination
+---are not primarily failures of confidence calibration but failures
+of \emph{frame selection}: the model activates an interpretive frame
+that is inappropriate for the current input context, and generates
+fluent, internally coherent output within that frame.
+
+We propose a structural account of hallucination grounded in an
+interpretive stack model \cite{minamoto2026accumulation}: an LLM implicitly maintains a layered set of
+interpretive frames acquired during pretraining and fine-tuning,
+and hallucination occurs when the \emph{selection rule} activates
+the wrong frame in response to the current input. Under this model,
+the apparent diversity of hallucination types can be unified within
+a single explanatory framework with a predictable structure.
+
+This account has three consequences. First, it generates a
+classification of hallucination types by their frame-selection
+failure mechanism, unifying phenomena that existing taxonomies treat
+as distinct. Second, it reframes retrieval-augmented generation (RAG),
+chain-of-thought (CoT) prompting, and system prompts as practical
+interventions on frame activation rather than knowledge augmentation
+or reasoning support. Third, it identifies \emph{Selection Stability
+Capacity} (SSC)---the ability to maintain the correct frame across
+diverse input contexts---as the structural property that debiasing
+interventions should target, and explains why increasing training
+data volume alone is insufficient to achieve it.
+
+We derive four testable predictions distinguishing the frame-selection
+account from the uncertainty-calibration account, and propose
+mechanistic interpretability as the primary empirical route for
+verification. This framework does not merely reinterpret hallucination:
+it predicts systematic shifts in error type distribution under different
+prompting conditions, retrieval strategies, and fine-tuning regimes---
+predictions that are falsifiable and distinct from those of the
+calibration account.
+\end{abstract}
+
+%-------------------------------------------------------------------
+\section{Introduction}
+%-------------------------------------------------------------------
+
+Hallucination in large language models---the generation of fluent,
+confidently-stated content that is factually incorrect, contextually
+inappropriate, or unsupported by the input---has become a central
+problem in AI deployment. The standard account attributes
+hallucination to \emph{epistemic failure}: the model lacks reliable
+uncertainty estimates and generates high-confidence output in
+low-confidence regions \cite{kadavath2022, lin2022, xiong2024}.
+The canonical prescription follows directly: improve calibration
+through temperature scaling, uncertainty-aware training, or
+reinforcement learning from human feedback (RLHF).
+
+We do not dispute that calibration failures contribute to
+hallucination. We argue, however, that calibration failure is
+insufficient to explain a significant class of hallucination
+phenomena. Consider the following:
+
+\begin{itemize}
+\item A model asked about a historical figure invents plausible-
+sounding but false biographical details, even when it could in
+principle express uncertainty.
+\item A model playing a specific role (e.g., a medical advisor)
+generates output appropriate to a different role (e.g., a general
+conversationalist) when the input shifts register slightly.
+\item A model given a document to summarize introduces content
+from a related but distinct document not in context.
+\item A model generating a narrative continues the narrative in a
+direction consistent with its training distribution rather than with
+the explicit constraints given in the prompt.
+\end{itemize}
+
+In each of these cases, the hallucinated content is not random noise
+but \emph{coherent within a frame}---the model is generating output
+that would be appropriate if a different context, role, or knowledge
+base were active. The error is not that the model is uncertain; it
+is that the model is confidently operating within the wrong
+interpretive frame.
+
+We propose that this class of hallucinations is better understood as
+\emph{frame misactivation}: the selection rule that governs which
+interpretive frame is active has chosen an inappropriate frame for
+the current input, and the model generates fluent output within that
+frame without detecting the mismatch. This is structurally distinct
+from uncertainty-calibration failure and calls for a different
+diagnostic and remediation approach.
+
+The present paper develops this account within the interpretive stack
+framework of \cite{minamoto2026accumulation}, applies
+it to derive a classification of hallucination types, reinterprets
+RAG and CoT as frame-selection interventions, and derives testable
+predictions that distinguish the frame-selection account from the
+calibration account.
+
+%-------------------------------------------------------------------
+\section{The Interpretive Stack Model}
+%-------------------------------------------------------------------
+
+We introduce the four constructs required for the hallucination
+analysis. The framework is developed formally in companion work
+\cite{minamoto2026accumulation}; the present paper
+is self-contained with respect to the definitions below.
+
+\begin{definition}[Interpretive Frame]
+An \emph{interpretive frame} $F$ is a function from inputs to outputs
+induced by a specific configuration of a language model's weight
+space. For an LLM, a frame corresponds to a computational subgraph
+that governs generation for a class of inputs---for example, the
+``medical knowledge'' frame, the ``narrative continuation'' frame,
+or the ``instruction following'' frame.
+
+\textbf{Operational grounding.} We do not assume that frames
+correspond to cleanly separable weight subsets. Rather, we adopt the
+operational definition from mechanistic interpretability research
+\cite{conmy2023towards, bricken2023monosemanticity}: a frame is
+a cluster of circuits (in the sense of \cite{elhage2021mathematical})
+whose causal contribution to output is coherent across a class of
+inputs. Operationally, two inputs $e_1$ and $e_2$ activate the
+\emph{same frame} if activation patching from $e_1$ to $e_2$ (or
+vice versa) leaves output behavior qualitatively unchanged for the
+relevant task, and activates a \emph{different frame} if patching
+produces a qualitative shift in output type or style. This definition
+connects the interpretive stack model to empirically tractable methods
+and makes the existence of distinct frames a testable claim rather
+than a posit.
+\end{definition}
+
+\begin{remark}[Computational-level status of the frame definition]
+The activation patching criterion above is a \emph{necessary condition}
+for same-frame classification, not a standalone decision procedure.
+In practice, applying activation patching requires a prior partition of
+inputs into candidate frame classes; the criterion confirms or
+disconfirms a proposed classification, not generates one from scratch.
+The definition is therefore \emph{empirically tractable given a frame
+hypothesis}. The computational form of the selection rule
+$\mathcal{S}$---which specific attention heads, MLP layers, or residual
+stream directions implement context-to-frame mapping---remains open
+(OP2 below). The interpretive stack model is a \emph{computational-level}
+theory in Marr's sense: it specifies what the system computes
+(frame selection) without yet fully specifying the implementing mechanism.
+This is a deliberate starting point, not a limitation.
+\end{remark}
+
+\begin{definition}[Interpretive Stack]
+An \emph{interpretive stack} $\mathcal{L} = (F_1, F_2, \ldots, F_n)$
+is an ordered sequence of interpretive frames implicitly encoded in
+the model's weight space. $F_1$ is the most recently installed or
+highest-priority frame. Earlier frames are residual structures from
+pretraining or prior fine-tuning stages.
+\end{definition}
+
+\begin{definition}[Selection Rule]
+A \emph{selection rule} $\mathcal{S}: \mathcal{E} \to \{1, \ldots, n\}$
+maps the current input context $e$---including prompt structure,
+register, distributional features, and semantic similarity to prior
+acquisition contexts---to an index $k$, activating frame $F_k$ as
+the operative frame for generation.
+\end{definition}
+
+\begin{definition}[Selection Stability Capacity (SSC)]
+Let a \emph{task specification} $T$ determine a target frame $F^*$
+as the frame whose output function best approximates the correct
+response function for $T$ (independently of whether the model
+produces hallucinated output). A model exhibits
+\emph{Selection Stability Capacity} with respect to $F^*$ and $T$
+if the selection rule $\mathcal{S}$ assigns $F^*$ across the full
+distribution of inputs consistent with $T$. SSC failure occurs when
+$\mathcal{S}$ activates a frame $F_k \neq F^*$ for some input $e$
+in that distribution, producing output coherent within $F_k$ but
+incorrect with respect to $T$.
+
+\emph{Note on non-circularity.} The target frame $F^*$ is fixed by
+the task specification $T$, not by whether the output is hallucinated.
+Hallucination is then defined as SSC failure---output generated under
+$F_k \neq F^*$---rather than the reverse. This ordering breaks the
+apparent circularity between ``wrong frame'' and ``hallucinated output'':
+the frame is wrong because it mismatches $T$, not because it produces
+hallucination.
+\end{definition}
+
+\begin{remark}[Relation to prior work and Transformer evidence]
+The interpretive stack model is developed formally in
+\cite{minamoto2026accumulation}. The present paper
+applies this model to hallucination without assuming familiarity with
+the full formal apparatus.
+
+The claim that Transformers implement something like frame selection
+is supported by existing mechanistic interpretability findings.
+Induction heads \cite{olsson2022induction} implement a form of
+context-sensitive pattern completion that behaves differently
+depending on the distributional context of the input---a primitive
+form of frame selection. Attention head specialization
+\cite{elhage2021mathematical} shows that different heads implement
+qualitatively distinct computational roles, and that these roles
+can be causally isolated via activation patching. Sparse
+autoencoder decompositions \cite{bricken2023monosemanticity} have
+identified monosemantic features corresponding to specific concepts,
+domains, and registers within a single model's activation space.
+
+The selection rule $\mathcal{S}$ is therefore not a posited
+abstraction but a functional description of the mechanism by which
+context-sensitive attention patterns route computation through
+different circuit subgraphs. Its formal characterization in terms
+of specific architectural components is the subject of OP2.
+\end{remark}
+
+\subsection{The Selection Rule}
+\label{sec:selection-rule}
+
+The frame that is active at any moment is determined by a
+\emph{selection rule} $\mathcal{S}$.
+
+\begin{definition}[Selection Rule]
+\[
+\mathcal{S}(e)
+  = \operatorname{arg\,max}_k\;
+    \mathrm{softmax}_k\!\left(\frac{s(e,\, C_k)}{\tau}\right)
+\]
+where $e \in \mathcal{E}$ is the current input context,
+$C_k$ is the acquisition context of frame $F_k$,
+$s(\cdot,\cdot): \mathcal{E} \times \mathcal{E} \to [0,1]$ is a context-similarity function,
+and $\tau > 0$ is a temperature parameter.
+\end{definition}
+
+\begin{remark}[Cognitive interpretation of $\tau$]
+The temperature $\tau$ operationalizes context-discrimination capacity.
+Low $\tau$ produces sharp selection (dominant frame wins reliably);
+high $\tau$ flattens the distribution, increasing misactivation risk.
+In LLMs, $\tau$ effectively rises when input register diverges from
+the fine-tuning distribution, when context is long, or when
+chain-of-thought scaffolding is absent.
+Each of these maps directly to a testable hallucination trigger
+in Predictions~1--3: register shift (Type II), context length
+(Type III), and prompt formulation (Type V).
+\end{remark}
+
+\noindent
+Under this rule, the hallucination mechanism is precise:
+when $e$ resembles the acquisition context $C_k$ of an archived
+wrong-frame $F_k$ more closely than it resembles $C_1$ (the target
+frame), $\mathcal{S}$ selects $F_k$, producing hallucination.
+The temperature $\tau$ models context-discrimination capacity:
+high $\tau$ (low discrimination) increases reactivation risk;
+low $\tau$ (sharp discrimination) stabilizes the target frame.
+This connects directly to Prediction~2 (Context-Structured
+Hallucination Rate): hallucination rate should increase
+monotonically with $s(e, C_k)$ for an archived wrong frame.
+
+\subsection{Constraints on the Frame Concept}
+\label{sec:frame-constraints}
+
+A potential objection is that the frame concept is too expressive:
+if any input--output pattern can be attributed to ``some frame,''
+the account explains everything and therefore predicts nothing.
+We address this by specifying three constraints that make the frame
+concept falsifiable.
+
+\textbf{Constraint 1 (Coherence).}
+A frame $F$ must generate internally coherent outputs across its
+activation domain: if inputs $e_1$ and $e_2$ activate the same
+frame, their outputs should be stylistically, registrally, and
+semantically consistent with each other and with an identifiable
+training context.
+This rules out treating every individual output as a distinct frame.
+
+\textbf{Constraint 2 (Activation patching discriminability).}
+Two proposed frames $F_1$ and $F_2$ are empirically distinct only
+if there exists a pair of inputs $(e_1, e_2)$ such that activation
+patching from $e_1$ to $e_2$ produces a \emph{qualitative} shift
+in output type---not merely a quantitative change in token
+probabilities.
+This gives a necessary condition for frame distinctness that is
+testable with existing mechanistic interpretability tools
+\cite{conmy2023towards}.
+
+\textbf{Constraint 3 (Acquisition context specificity).}
+Each frame must be associated with an acquisition context $C$---a
+characterizable region of the training distribution---such that
+inputs with high distributional similarity to $C$ preferentially
+activate the frame.
+Distributional similarity can be operationalized via any of the
+following: embedding proximity in the model's residual stream
+at an early layer, prompt-template surface overlap (vocabulary,
+register, formatting), or estimated fine-tuning corpus overlap
+(when fine-tuning data is available).
+
+The prediction holds under any proxy satisfying the following
+\emph{pairwise ordering condition}: for any two inputs $e_1, e_2$
+and target frame $F_k$ with acquisition context $C_k$,
+\[
+\delta(e_1, C_k) > \delta(e_2, C_k)
+\;\Rightarrow\;
+P(\mathcal{S}(e_1) = k) \geq P(\mathcal{S}(e_2) = k).
+\]
+This is a rank-preservation requirement, not a functional form
+requirement: the prediction is that the Spearman rank correlation
+between $\delta(\cdot, C_k)$ and the reactivation rate
+$P(\mathcal{S}(\cdot) = k)$, measured over a test set of inputs,
+is strictly positive.
+This formulation is proxy-agnostic and pre-registerable.
+This constraint generates the falsifiable prediction of
+Prediction~2 (Section~\ref{sec:predictions}): reactivation rate
+should be monotonically related to input similarity to $C$,
+not uniformly distributed.
+
+Together, these constraints rule out the degenerate case where
+``frame'' is just a label attached post-hoc to any observed output
+pattern.
+The taxonomy in Section~3 instantiates each type with a specific
+acquisition context, making the proposed frames falsifiable through
+Constraints~1--3.
+
+%-------------------------------------------------------------------
+\section{A Frame-Selection Taxonomy of Hallucination}
+%-------------------------------------------------------------------
+
+We propose that hallucination types can be classified by the
+mechanism of frame-selection failure. We identify five classes.
+
+\begin{remark}[Relation to existing hallucination taxonomies]
+Existing surveys \cite{huang2023survey, zhang2023siren} classify
+hallucinations primarily by their output manifestation (factual,
+faithfulness, contextual, etc.) and by attributed cause (knowledge
+gap, attention failure, decoding artifact). The present taxonomy
+organizes hallucinations by their \emph{frame-selection failure
+mechanism}, which cuts across manifestation-based categories. A
+factual hallucination may be a Type~I failure (distributional frame
+bleed) or a Type~III failure (context boundary failure); a contextual
+hallucination may be a Type~II failure (register-induced frame switch)
+or a Type~IV failure (narrative frame overflow). The present taxonomy
+is therefore not a replacement for manifestation-based taxonomies
+but a proposed mechanistic layer beneath them, with distinct
+implications for debiasing targets.
+\end{remark}
+
+\subsection{Type I: Distributional Frame Bleed}
+
+The model is presented with an input that shares surface features
+with a high-frequency training context, and the selection rule
+activates the frame associated with that training context rather than
+the intended frame.
+
+\textbf{Example.} A question about a rare historical figure activates
+the ``famous biography'' frame, generating plausible-sounding but
+false biographical details that fit the statistical pattern of
+well-documented figures.
+
+\textbf{Mechanism.} The selection rule $\mathcal{S}$ uses surface
+similarity to acquisition contexts as its primary signal. When the
+input resembles a high-frequency training context more than the
+low-frequency truth, the wrong frame wins.
+
+\textbf{Calibration account.} The calibration account attributes
+this to overconfidence in a low-evidence region. The frame-selection
+account makes a stronger structural claim: even if the model were
+perfectly calibrated, it would generate the wrong content as long
+as the wrong frame is active, because the frame determines what
+counts as coherent output.
+
+\subsection{Type II: Register-Induced Frame Switch}
+
+A shift in input register (formality, domain vocabulary, persona
+cue) triggers a frame transition that is inappropriate for the
+task.
+
+\textbf{Example.} A model instructed to act as a strict factual
+assistant generates speculative content when the user shifts to
+a conversational register, because the conversational register
+activates a ``chatbot'' frame with different generation norms.
+
+\textbf{Mechanism.} The selection rule is sensitive to stylistic
+features of the input. A register shift that resembles the
+acquisition context of a different frame can override the intended
+frame even when the task instruction remains explicit.
+
+\subsection{Type III: Context Boundary Failure}
+
+The model generates content from a document or context not present
+in the current input window, treating the current context as
+continuous with a related prior context.
+
+\textbf{Example.} A model asked to summarize document A introduces
+claims from document B, which is distributionally adjacent to
+document A in the model's training data and shares surface features
+with the current input, causing the selection rule to activate a
+frame whose acquisition context encompasses document B's domain.
+
+\textbf{Mechanism.} The selection rule activates a frame whose
+acquisition context includes the adjacent document, effectively
+extending the context boundary beyond the current input.
+
+\subsection{Type IV: Narrative Overcompletion}
+
+The model generates output that continues a narrative trajectory
+consistent with its training distribution, overriding explicit
+constraints in the prompt.
+
+\textbf{Example.} A model asked to write a story with an unusual
+ending instead generates a conventional ending that fits the
+genre template, because the narrative completion frame is more
+strongly activated than the ``constraint following'' frame.
+
+\textbf{Mechanism.} Inputs with narratively structured context
+produce selection outcomes in which the narrative-completion frame
+is assigned by $\mathcal{S}$ with higher probability than the
+constraint-following frame, because the narrative structure more
+closely resembles the narrative frame's acquisition context.
+The prompt constraint is processed within the already-active
+narrative frame rather than overriding the selection outcome.
+
+\subsection{Type V: Epistemic Frame Displacement}
+
+The model responds as though it has access to information it does
+not have, or as though it lacks information it does have, because
+the active frame determines what counts as ``known.''
+
+\textbf{Example.} A model confidently asserts outdated information
+because the frame active for that domain was acquired during a
+period when that information was correct, and the selection rule
+does not update to a more recent frame.
+
+\textbf{Mechanism.} The selection rule activates a temporally
+anchored frame. Within that frame, the outdated information is
+correct and confident assertion is appropriate. The error is not
+overconfidence per se but temporal frame misalignment.
+
+\textbf{Distinction from knowledge cutoff failure.}
+Type~V is structurally distinct from ordinary knowledge cutoff
+failure, in which the model lacks the relevant information
+entirely.
+The distinguishing test is frame-signal injection: present the
+model with an explicit temporal marker (e.g., ``as of 2026'')
+alongside the query.
+Under a knowledge cutoff failure, the temporal marker cannot
+override the error because the updated information is absent from
+the weight space.
+Under Type~V, the temporal marker functions as a frame-selection
+signal, biasing the selection rule toward a more recent acquisition
+context and suppressing the outdated frame---so the error
+\emph{does} resolve when the frame signal is provided and
+\emph{re-emerges} when it is removed.
+This reactivation pattern under signal removal is the signature
+prediction of the frame-selection account for Type~V, and is
+not predicted by the knowledge cutoff account.
+
+\emph{Concrete prompt pair.}
+Consider a domain where the model's training data spans
+two periods with contradictory factual content (e.g., a
+leadership position that changed mid-training).
+\begin{itemize}
+\item \textbf{Baseline prompt:} ``Who is the CEO of [company]?''
+  The model asserts the pre-change name confidently.
+\item \textbf{Frame-signal prompt:} ``As of early 2026,
+  who is the CEO of [company]?''
+  Under Type~V, the temporal marker shifts the selection rule
+  toward a later acquisition context; the model now returns
+  the post-change name.
+\item \textbf{Removal probe:} Remove the temporal marker and
+  requery in the same conversation turn.
+  Type~V predicts reversion to the earlier name; knowledge
+  cutoff failure predicts no change (the model had accessed
+  the correct information and should retain it in context).
+\end{itemize}
+The reversion in the removal probe is the critical observation:
+it indicates that the correct information was available but
+suppressed by frame reactivation, not that it was absent.
+
+\subsection{Summary Table}
+
+\begin{center}
+\begin{tabular}{llll}
+\toprule
+Type & Name & Trigger & Mechanism \\
+\midrule
+I & Distributional Bleed & Surface similarity & High-frequency frame dominance \\
+II & Register Switch & Stylistic shift & Register-frame coupling \\
+III & Context Boundary & Adjacent context & Context window ambiguity \\
+IV & Narrative Overcompletion & Narrative structure & Completion prior dominance \\
+V & Epistemic Displacement & Temporal anchoring & Temporally fixed frame \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+%-------------------------------------------------------------------
+\section{Reinterpreting RAG, CoT, and System Prompts}
+%-------------------------------------------------------------------
+
+Under the frame-selection account, the major practical techniques
+for reducing hallucination are not primarily knowledge augmentation
+or reasoning support but \emph{interventions on the selection rule}.
+
+\subsection{Retrieval-Augmented Generation (RAG)}
+
+The standard interpretation of RAG is that it provides the model
+with external knowledge that it lacks internally. The frame-selection
+account offers a complementary interpretation: RAG modifies the
+input context $e$ in ways that bias the selection rule toward
+frames consistent with the retrieved content.
+
+Specifically, retrieved documents carry distributional signals
+(vocabulary, register, domain markers) that shift the similarity
+between $e$ and frame acquisition contexts. By injecting content
+that closely resembles the acquisition context of the target frame,
+RAG increases the probability that $\mathcal{S}$ selects the
+appropriate frame.
+
+This interpretation makes a prediction that the knowledge
+augmentation account does not: RAG should reduce hallucination
+even when the retrieved content is semantically relevant but
+factually redundant---because the frame-selection effect operates
+through distributional similarity, not through logical entailment.
+
+\subsection{Chain-of-Thought Prompting}
+
+CoT prompting is standardly interpreted as enabling the model to
+perform multi-step reasoning by externalizing intermediate steps.
+The frame-selection account offers a structural reinterpretation:
+CoT \emph{sequentially fixes} the interpretive frame at each
+reasoning step, preventing frame drift between steps.
+
+By making the reasoning process explicit in the context, CoT
+continuously updates the input $e$ with the current reasoning
+state, biasing the selection rule toward frames consistent with
+the established reasoning trajectory. This reduces the probability
+of a frame switch mid-reasoning that would generate output
+inconsistent with the established conclusion.
+
+The frame-selection account predicts that CoT should be especially
+effective for Type IV (narrative overcompletion) and Type II
+(register-induced frame switch) hallucinations, where the primary
+risk is frame drift during an extended generation sequence.
+
+\subsection{System Prompts and Persona Instructions}
+
+System prompts function as \emph{prior frame injections}: by
+establishing a role, persona, or task frame before any user input,
+they bias the selection rule toward the specified frame for the
+duration of the interaction.
+
+However, the frame-selection account also explains the well-known
+fragility of persona instructions under adversarial prompting
+\cite{perez2022ignore, wei2023jailbroken}: a sufficiently strong
+input signal---one that strongly resembles the acquisition context
+of a different frame---can override the system prompt's prior
+injection, activating the alternative frame and producing output
+inconsistent with the intended persona.
+
+This is not a failure of instruction following (the model
+``understands'' the system prompt) but a failure of SSC: the
+selection rule is not stable under the adversarial input.
+
+%-------------------------------------------------------------------
+\section{Distinguishing Predictions}
+\label{sec:predictions}
+%-------------------------------------------------------------------
+
+The frame-selection account and the calibration account make
+distinct empirical predictions. We identify four predictions
+that are tractable with current mechanistic interpretability methods.
+
+The following table maps the five hallucination types (Section~3)
+to the predictions that most directly test each type's proposed
+mechanism.
+
+\begin{center}
+\small
+\begin{tabular}{lll}
+\toprule
+Hallucination Type & Primary Prediction & Secondary Prediction \\
+\midrule
+I: Distributional Bleed & P1 (Frame-coherent errors) & P2 (Context-structured rate) \\
+II: Register Switch & P2 (Context-structured rate) & P4 (Circuit identity) \\
+III: Context Boundary & P3 (RAG frame signal) & P4 (Circuit identity) \\
+IV: Narrative Overcompletion & P1 (Frame-coherent errors) & P4 (Circuit identity) \\
+V: Epistemic Displacement & P2 (Context-structured rate) & P4 (Circuit identity) \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\medskip
+
+\noindent\textbf{Additional predictions for Types I--IV.}
+Beyond the four primary predictions below, we note one
+confirmable prediction per hallucination type that is tractable
+with existing datasets:
+\textit{Type I} (Distributional Bleed) predicts that clustered
+hallucinated outputs will show lower perplexity \emph{within}
+the misactivated frame than the base model's perplexity on the same outputs;
+\textit{Type II} (Register Switch) predicts that hallucination rate
+increases when system-prompt register mismatches the query register
+(e.g., formal system prompt + casual query);
+\textit{Type III} (Context Boundary) predicts that RAG retrieval
+of frame-congruent but factually redundant content reduces hallucination
+more than factually novel but frame-incongruent content;
+\textit{Type IV} (Narrative Overcompletion) predicts that hallucinated
+continuations show higher cosine similarity to the narrative frame's
+training distribution than to the factual frame's distribution.
+
+\subsection{Prediction 1: Frame-Coherent Error Structure}
+
+\textbf{Calibration account (strongest version).} The most
+sophisticated calibration accounts \cite{kadavath2022, xiong2024}
+do not claim that hallucinated content is uniformly distributed.
+They allow that hallucinated content is biased toward high-frequency
+patterns in the training distribution (since overconfident regions
+are precisely the high-frequency regions). On the strongest version
+of the calibration account, hallucinated content should correlate
+with training frequency and should be detectable by entropy-based
+uncertainty measures.
+
+\textbf{Frame-selection account.} Hallucinated content should
+be coherent within the misactivated frame: factually wrong
+but stylistically, registrally, and semantically appropriate to
+the wrong frame. Critically, hallucinated content should be
+\emph{low-entropy within the wrong frame}---it should appear
+confident and internally consistent rather than uncertain---
+because the model is generating correctly within an incorrect frame,
+not generating incorrectly within a correct frame. Errors should
+cluster by frame type rather than by training frequency.
+
+\textbf{Test.} Cluster hallucinated outputs by semantic and
+stylistic similarity. The frame-selection account predicts
+cluster structure that corresponds to identifiable training
+frames (biography frame, narrative frame, domain expert frame,
+etc.).
+
+\emph{Measurement order.}
+To avoid circularity (Section~\ref{sec:frame-constraints},
+Constraint~2), the test proceeds in two stages.
+First, candidate frames are identified using the taxonomy of
+Section~3 as a prior: each hallucination type specifies a
+candidate acquisition context from which a frame hypothesis
+can be derived (e.g., ``this Type~I error should cluster with
+the high-frequency biography training context'').
+Second, activation patching is used to confirm or disconfirm
+the proposed frame assignment: if patching from a confirmed
+biography-frame input to the hallucinated output leaves output
+style qualitatively unchanged, the frame assignment is supported.
+This two-stage procedure grounds the clustering test in
+Constraint~2 without presupposing the result.
+
+\subsection{Prediction 2: Context-Structured Hallucination Rate}
+
+\textbf{Calibration account (strongest version).} Sophisticated
+calibration accounts \cite{lin2022, xiong2024} predict that
+hallucination rate should vary primarily with the model's
+epistemic uncertainty about the topic, as estimated by consistency
+across multiple samples or by probing-based uncertainty measures.
+On this view, varying input register or vocabulary while holding
+topic constant should not substantially affect hallucination rate
+if topic-level uncertainty is controlled---the model's epistemic
+state about a topic should be relatively invariant to how the
+question is phrased.
+
+\textbf{Frame-selection account.} Hallucination rate should vary
+with the \emph{distributional distance} between the input context
+and the target frame's acquisition context. Inputs that
+distributionally resemble a high-frequency alternative frame
+should hallucinate more than inputs that do not, independent of
+topic coverage. This prediction is \emph{orthogonal} to
+uncertainty: a topic the model ``knows well'' (low entropy) can
+still hallucinate if register shift activates the wrong frame.
+
+\textbf{Test.} Systematically vary input register and vocabulary
+while holding topic constant. The frame-selection account predicts
+that inputs resembling alternative frame acquisition contexts
+will hallucinate more, even for topics with high coverage and
+low model uncertainty.
+
+\subsection{Prediction 3: RAG Effectiveness via Frame Signal}
+
+\textbf{Knowledge augmentation account.} RAG should be effective
+primarily when retrieved content provides factual information
+the model lacks.
+
+\textbf{Frame-selection account.} RAG should be effective
+even when retrieved content is factually redundant, if it
+provides strong frame-selection signals (vocabulary, register,
+domain markers). Conversely, RAG should fail when retrieved
+content provides correct facts but weak frame signals.
+
+\textbf{Test.} Compare RAG conditions in which retrieved content
+is (a) factually novel and frame-congruent, (b) factually
+redundant and frame-congruent, (c) factually novel but
+frame-incongruent. The frame-selection account predicts that
+condition (b) reduces hallucination more than condition (c).
+
+\subsection{Prediction 4: Circuit Persistence of Misactivated Frames}
+
+\textbf{Calibration account.} Hallucination-prone regions of
+the input space should correspond to regions of high model
+uncertainty, identifiable by entropy in output distributions.
+
+\textbf{Frame-selection account.} Hallucination-prone inputs
+should activate identifiable circuits associated with the
+misactivated frame, detectable via activation patching or
+causal tracing \cite{elhage2021mathematical, conmy2023towards}.
+The hallucinating model should show high activation of
+wrong-frame circuits and low activation of correct-frame
+circuits.
+
+\textbf{Test.} Apply mechanistic interpretability methods to
+compare circuit activation patterns on hallucinating vs.\
+non-hallucinating inputs. The frame-selection account predicts
+that the difference is in circuit identity (which frame is
+active) rather than in output entropy alone.
+
+\subsection{Negative Prediction: Falsification Condition}
+
+To constitute a scientific theory rather than a post-hoc
+classification scheme, the frame-selection account must
+specify conditions under which it is falsified.
+We state one critical negative prediction:
+
+\textbf{Negative Prediction (Type~V).}
+If the Type~V (epistemic frame displacement) account is correct,
+then presenting an explicit temporal marker (``as of [date]'')
+alongside a query where the model asserts outdated information
+should \emph{reduce} the assertion rate, and \emph{removing}
+the temporal marker from context should restore the original
+assertion rate.
+\emph{If neither the reduction nor the restoration occurs},
+the frame-selection account of Type~V is falsified for that
+instance, and the failure is better attributed to knowledge
+cutoff (absence of information) rather than frame misactivation
+(information present but suppressed).
+
+The critical test is the restoration step: knowledge cutoff
+failure predicts no change upon marker removal (the information
+is simply absent from weight space); frame misactivation
+predicts restoration (the suppressed frame reactivates when
+the frame signal is removed).
+
+\subsection{Competing Hypotheses and Their Predictions}
+
+Two alternative explanations merit explicit comparison:
+
+\textbf{Recency bias hypothesis.}
+Outputs reflect recent context tokens more than semantically
+appropriate earlier tokens, due to attention decay over distance.
+On this view, hallucination follows from recency weighting,
+not frame selection.
+\emph{Distinguishing prediction:} recency bias predicts that
+hallucination rate should correlate with the distance of
+relevant context tokens from the generation point, independent
+of distributional similarity to alternative acquisition contexts.
+The frame-selection account predicts the opposite: hallucination
+should correlate with distributional similarity to alternative
+frames, even when task-relevant context is at the same position.
+
+\textbf{Context overwrite hypothesis.}
+Instructions or retrieved content directly overwrite the model's
+prior tendency, and failures arise when overwriting is incomplete.
+On this view, stronger instructions should produce monotonically
+lower hallucination rates.
+\emph{Distinguishing prediction:} context overwrite predicts
+that longer, more emphatic system prompts should consistently
+reduce hallucination.
+The frame-selection account predicts that prompt emphasis is
+insufficient when the input context strongly matches an
+alternative frame's acquisition context---in those cases,
+frame-signal injection (distributional match) should dominate
+instruction strength.
+The removal probe test (Prediction~4 above) directly
+distinguishes the two: context overwrite predicts that
+removal of a frame signal should not restore prior behavior
+(since the instruction remains), while frame misactivation
+predicts restoration.
+
+\subsection{Type V Quantification}
+
+\begin{table}[ht]
+\centering
+\small
+\begin{tabular}{lcccc}
+\hline
+Condition & $N$ prompts & Assertion rate & vs. baseline & Predicted by \\
+\hline
+Baseline ($e_0$) & 100 & $r_0$ & --- & All accounts \\
+Frame signal ($e_C$) & 100 & $r_C > r_0$ & $+\delta_1$ & Frame-sel., Bayesian \\
+Signal removed ($e_{\text{rm}}$) & 100 & $r_{\text{rm}} \approx r_0$ & $-\delta_2$ & Frame-sel. only \\
+\hline
+\end{tabular}
+\caption{Type~V (epistemic frame displacement) removal probe protocol.
+$r_0$: baseline assertion rate of outdated information;
+$r_C$: assertion rate under temporal-context frame signal;
+$r_{\text{rm}}$: assertion rate after signal removal.
+The frame-selection account predicts $r_C - r_{\text{rm}} > \delta_2$
+(restoration upon removal); the knowledge cutoff account predicts
+$r_C - r_{\text{rm}} \approx 0$.
+Pre-registration requires specifying $\delta_1, \delta_2 > 0$
+as multiples of within-condition standard deviation before data
+collection. $N = 100$ per condition yields $>$90\% power for
+effect sizes $\geq 0.3$ SD at $\alpha = 0.05$.}
+\label{tab:typev}
+\end{table}
+
+%-------------------------------------------------------------------
+\section{Implications for Debiasing}
+%-------------------------------------------------------------------
+
+\subsection{Why Confidence Calibration Is Insufficient}
+
+If hallucination is primarily a frame-selection failure, then
+improving confidence calibration addresses the symptom but not
+the cause. A perfectly calibrated model that activates the wrong
+frame will generate output that is confidently and coherently
+wrong within that frame. The calibration intervention would
+make the model \emph{less certain} about its wrong output,
+but it would not prevent the wrong frame from being activated.
+
+The appropriate target for debiasing is SSC: the model's ability
+to maintain the correct frame across the full distribution of
+intended inputs, including inputs that distributionally resemble
+alternative frames.
+
+\subsection{SSC-Targeted Interventions}
+
+SSC can be targeted by interventions that modify the selection rule
+rather than the content of individual frames. We identify three
+candidate intervention types.
+
+\textbf{Acquisition context poisoning.} During fine-tuning for a
+target frame $F^*$, deliberately present training examples in
+contexts that distributionally resemble alternative frame
+acquisition contexts. This trains the selection rule to select
+$F^*$ even in the presence of competing frame signals.
+
+\textbf{Contrastive frame training.} Train the model to
+explicitly distinguish frame-appropriate from frame-inappropriate
+outputs for a given input, rather than only training on
+frame-appropriate outputs. This may strengthen the selection
+rule's sensitivity to frame mismatch.
+
+\textbf{Context anchoring.} Modify inference-time prompting to
+continuously re-anchor the frame signal, reducing the probability
+of frame drift over long generation sequences. This is a
+formalization of techniques already used in practice (e.g.,
+repeating the system prompt at regular intervals).
+
+\subsection{Implications for RAG and CoT Design}
+
+Under the frame-selection account, RAG and CoT systems should
+be designed not only to provide relevant content or reasoning
+scaffolds but to maximize frame-selection signal:
+
+\begin{enumerate}[label=(\roman*)]
+\item Retrieved documents should be filtered not only for
+semantic relevance but for frame congruence---documents that
+strongly resemble the target frame's acquisition context.
+\item CoT prompts should be designed to explicitly re-establish
+the frame at each reasoning step, not only to provide
+intermediate conclusions.
+\item System prompts should be tested for SSC robustness:
+how strongly must an adversarial input deviate from the system
+prompt's frame signal before the model switches frames?
+\end{enumerate}
+
+%-------------------------------------------------------------------
+\section{Relation to Prior Work}
+%-------------------------------------------------------------------
+
+The calibration account of hallucination has been developed
+extensively \cite{kadavath2022, lin2022, xiong2024}. The
+frame-selection account is complementary rather than competing:
+we argue that calibration failure and frame misactivation are
+distinct failure modes that coexist in practice, and that
+current research over-indexes on calibration at the expense of
+frame-selection analysis.
+
+The concept of ``competing experts'' or ``mixture of behaviors''
+in neural networks is not new \cite{jacobs1991, jordan1994},
+and recent mechanistic interpretability research has identified
+competing circuits in LLMs \cite{conmy2023towards, bricken2023monosemanticity}. Our contribution
+is to organize these observations within a formal framework
+(the interpretive stack) that connects them to hallucination
+taxonomy and generates concrete testable predictions.
+
+The gate function in mixture-of-experts (MoE) architectures
+\cite{jacobs1991, jordan1994} implements a selection rule in
+mathematically explicit form: a learned function assigns each input
+to one or more expert modules. Frame misactivation corresponds,
+under this analogy, to gating error. The interpretive stack model
+differs from MoE in three respects. First, in standard MoE, experts
+are trained jointly with the gate and are well-separated by design;
+LLM frames are acquired sequentially across pretraining and fine-tuning
+phases and may overlap substantially in input distribution. Second, MoE
+gates are trained with explicit gating objectives; the LLM selection
+rule $\mathcal{S}$ is emergent and not directly optimized.
+Third, MoE models exhibit stable gating within their training
+distribution by construction; LLM SSC failures occur specifically under
+distributional shift relative to each frame's acquisition context.
+The frame misactivation account therefore generalizes MoE gating
+failure analysis to the sequential, multi-phase training setting
+of large language models.
+
+The taxonomy of hallucination types we propose differs from
+existing taxonomies \cite{huang2023survey, zhang2023siren} in
+its organizing principle: rather than classifying by output
+type (factual vs.\ faithfulness hallucination, etc.), we
+classify by the frame-selection mechanism responsible for the
+error. This distinction matters because the two taxonomies
+imply different debiasing targets.
+
+The relation between fine-tuning and frame persistence is
+developed in \cite{minamoto2026accumulation}, where fine-tuning is
+shown to implement frame accumulation rather than overwriting,
+with prior frames remaining selectable under appropriate input
+conditions. The present paper focuses on inference-time frame
+selection rather than training-time frame accumulation.
+
+A complementary perspective comes from thinking mid-training
+\cite{lanchantin2026midtraining}, which introduces an intermediate
+SFT+RL training phase between pretraining and post-training. The
+finding that this improves post-training performance by 3.2$\times$
+is consistent with the frame-selection account: models that develop
+structured frame-transition patterns during mid-training exhibit
+higher Selection Stability Capacity during post-training, and are
+therefore less prone to the frame-misactivation failures analyzed
+here. The training pipeline determines not only which frames are
+acquired but how robustly the selection rule can discriminate among
+them under distributional shift.
+
+%-------------------------------------------------------------------
+\section{Pilot Empirical Evidence}
+\label{sec:pilot}
+%-------------------------------------------------------------------
+
+The predictions of Section~\ref{sec:predictions} require
+mechanistic interpretability experiments at a scale beyond
+the scope of this theoretical paper.
+We report a pilot study using representational similarity
+analysis (RSA) that provides initial indirect support for
+the frame-selection account's central structural claim:
+that training establishes a stable relational geometry that
+is sensitive to distributional input context.
+
+\paragraph{Setup.}
+We applied RSA to three training checkpoints of Pythia-70m
+\cite{biderman2023}: step~0 (random initialization),
+step~1000 (early training), and step~143000 (fully trained
+reference).
+Pairwise dissimilarity matrices were computed over $n = 29$
+probe concepts at hidden layers $\ell \in \{2, 4, 6\}$,
+using three prompt templates averaged to reduce surface-form
+bias.
+Structural similarity was measured as the second-order RSA
+correlation $\rho_\mathrm{cog}(A, B; \ell) =
+\mathrm{Spearman}(\mathrm{upper}(D^{A,\ell}),
+\mathrm{upper}(D^{B,\ell}))$.
+
+\paragraph{Results.}
+Two findings are relevant to the frame-selection account.
+
+\emph{Finding 1: Training induces stable relational geometry.}
+$\rho_\mathrm{cog}$ between early and fully trained checkpoints
+increases monotonically across all layers
+(L6: step-0 $\to$ step-1000: $0.017 \to 0.535$),
+indicating that training progressively installs a stable
+relational structure rather than reorganizing it randomly.
+This is consistent with the frame-selection account's
+premise that trained models maintain interpretive frames
+as structured attractors in weight space.
+
+\emph{Finding 2: Cross-architecture convergence.}
+$\rho_\mathrm{cog}(\text{GPT-2 trained},
+\text{Pythia-trained}) \approx 0.42$ versus
+$\rho_\mathrm{cog}(\text{GPT-2 trained},
+\text{Pythia-step-0}) \approx 0.10$ across all layers.
+Two architecturally distinct models trained on different
+corpora converge to similar relational geometry,
+while random initialization shares no such structure.
+This suggests that the relational geometry captured by RSA
+is a property of training-induced frames rather than
+architectural artifact---consistent with the frame-selection
+account's prediction that hallucination patterns should
+be frame-coherent (Prediction~1) and context-sensitive
+(Prediction~2) rather than architecture-specific.
+
+\paragraph{Interpretation and limitations.}
+These results are consistent with but do not directly test
+Predictions~1--4, which require activation-level evidence
+of frame identity during hallucination.
+Critically, the RSA method cannot distinguish whether
+distributional shift in the input \emph{changes} which
+frame is selected (the frame-selection account's prediction)
+or merely adds noise to an otherwise fixed representation.
+Direct tests via the Removal Probe protocol
+(Section~\ref{sec:predictions}, Prediction~4;
+Table~\ref{tab:typev}) remain as the primary empirical priority.
+All code is available at
+\url{https://github.com/minamominamoto/grounding-without-reality}.
+
+%-------------------------------------------------------------------
+\section{Open Problems}
+%-------------------------------------------------------------------
+
+\begin{enumerate}[label=\textbf{OP\arabic*.}, leftmargin=*, itemsep=4pt]
+
+\item \textbf{Mechanistic identification of frames.}
+    Develop a method for identifying the boundaries of
+    interpretive frames in an LLM's weight space via sparse
+    autoencoders \cite{bricken2023monosemanticity}, activation
+    patching, or probing. This would enable empirical validation
+    of the five hallucination types.
+
+\item \textbf{Formal characterization of the selection rule.}
+    Determine the computational form of $\mathcal{S}$ in
+    transformer architectures. Which attention heads, residual
+    stream directions, or MLP layers implement context-to-frame
+    mapping?
+
+\item \textbf{SSC measurement.}
+    Develop an operational measure of SSC for LLMs: given a
+    target frame and an adversarial input distribution, estimate
+    the probability of frame misactivation as a function of
+    input distributional distance from the target frame's
+    acquisition context.
+
+\item \textbf{RAG frame-signal hypothesis.}
+    Test Prediction 3 empirically: does RAG reduce hallucination
+    via frame-signal injection independent of factual content?
+    A controlled experiment varying frame congruence while
+    holding factual content constant would provide the critical
+    evidence.
+
+\item \textbf{CoT as sequential frame fixing.}
+    Determine whether the benefit of CoT is primarily
+    attributable to frame stabilization rather than (or in
+    addition to) intermediate reasoning. An ablation study
+    comparing structured CoT (which maintains frame signal)
+    against unstructured scratchpad (which may not) would
+    be informative.
+
+\end{enumerate}
+
+%-------------------------------------------------------------------
+\section{Conclusion}
+%-------------------------------------------------------------------
+
+We have proposed a structural account of LLM hallucination as
+frame misactivation: the selection rule governing which
+interpretive frame is active in generation selects an
+inappropriate frame for the current input context, producing
+output that is fluent and coherent within the wrong frame.
+
+This account does not replace the calibration account but
+complements it: calibration failure and frame misactivation
+are distinct failure modes that call for distinct interventions.
+The appropriate intervention target for frame misactivation
+is Selection Stability Capacity (SSC)---the model's ability
+to maintain the correct frame across the intended input
+distribution---rather than confidence calibration alone.
+
+Under this account, RAG and CoT are reinterpreted as
+frame-selection interventions, and their fragility under
+adversarial inputs is explained as SSC failure rather than
+instruction-following failure. The five hallucination types
+we identify generate concrete, falsifiable predictions that
+distinguish the frame-selection account from the calibration
+account, providing an empirical program for validation via
+mechanistic interpretability.
+
+%-------------------------------------------------------------------
+\section*{Acknowledgments}
+%-------------------------------------------------------------------
+
+No funding was received for this work.
+
+%-------------------------------------------------------------------
+\begin{thebibliography}{99}
+
+\bibitem{minamoto2026accumulation}
+Minamoto, M. (2026). Abductive accumulation: Why interpretive frames
+persist, and how they drive hallucination in language models.
+Preprint (not yet on arXiv). Available at:
+\texttt{https://github.com/minamominamoto/topology-of-grounding}
+
+\bibitem{kadavath2022}
+Kadavath, S., et al. (2022). Language models (mostly) know what
+they know. \textit{arXiv:2207.05221}.
+
+\bibitem{lin2022}
+Lin, S., Hilton, J., \& Evans, O. (2022). TruthfulQA: Measuring
+how models mimic human falsehoods. \textit{Proceedings of ACL 2022},
+3214--3252.
+
+\bibitem{xiong2024}
+Xiong, M., et al. (2024). Can LLMs express their uncertainty?
+An empirical evaluation of confidence elicitation in LLMs.
+\textit{Proceedings of ICLR 2024}.
+
+\bibitem{perez2022ignore}
+Perez, F., \& Ribeiro, I. (2022). Ignore previous prompt:
+Attack techniques for language models. \textit{arXiv:2211.09527}.
+
+\bibitem{wei2023jailbroken}
+Wei, A., Haghtalab, N., \& Steinhardt, J. (2023). Jailbroken:
+How does LLM safety training fail? \textit{NeurIPS 2023}.
+
+\bibitem{elhage2021mathematical}
+Elhage, N., et al. (2021). A mathematical framework for transformer
+circuits. \textit{Transformer Circuits Thread}.
+\texttt{https://transformer-circuits.pub/2021/framework/index.html}
+
+\bibitem{olsson2022induction}
+Olsson, C., et al. (2022). In-context learning and induction heads.
+\textit{Transformer Circuits Thread}.
+\texttt{https://transformer-circuits.pub/2022/in-context-learning-and-induction-heads/index.html}
+
+\bibitem{conmy2023towards}
+Conmy, A., Mavor-Parker, A., Lynch, A., Heimersheim, S.,
+\& Garriga-Alonso, A. (2023). Towards automated circuit discovery
+for mechanistic interpretability. \textit{NeurIPS 2023}.
+
+\bibitem{bricken2023monosemanticity}
+Bricken, T., et al. (2023). Towards monosemanticity: Decomposing
+language models with dictionary learning.
+\textit{Transformer Circuits Thread}.
+
+\bibitem{lanchantin2026midtraining}
+Lanchantin, J., Li, D., Nguyen, T., Sukhbaatar, S., Kulikov, I.,
+Weston, J., \& Li, X. (2026). Thinking mid-training: Reinforcement
+learning of interleaved reasoning. In Tan, E. X., et al.,
+\textit{Self-Improving Pretraining}. \textit{arXiv:2601.21343}.
+
+\bibitem{jacobs1991}
+Jacobs, R. A., Jordan, M. I., Nowlan, S. J., \& Hinton, G. E.
+(1991). Adaptive mixtures of local experts. \textit{Neural
+Computation}, 3(1), 79--87.
+
+\bibitem{jordan1994}
+Jordan, M. I., \& Jacobs, R. A. (1994). Hierarchical mixtures
+of experts and the EM algorithm. \textit{Neural Computation},
+6(2), 181--214.
+
+\bibitem{huang2023survey}
+Huang, L., et al. (2023). A survey on hallucination in large
+language models: Principles, taxonomy, challenges, and open
+questions. \textit{arXiv:2311.05232}.
+
+\bibitem{zhang2023siren}
+Zhang, Y., et al. (2023). Siren's song in the AI ocean: A survey
+on hallucination in large language models.
+\textit{arXiv:2309.01219}.
+
+\bibitem{biderman2023}
+Biderman, S., et al.\ (2023).
+Pythia: A suite for analyzing large language models across training and scaling.
+\textit{Proceedings of ICML 2023}.
+
+\end{thebibliography}
+
+\end{document}

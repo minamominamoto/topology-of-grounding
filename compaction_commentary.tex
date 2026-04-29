@@ -37,7 +37,7 @@ compaction, and why?} Current compression approaches optimize for accuracy
 preservation on downstream benchmarks, treating compaction as a performance
 engineering problem. We propose that this framing is structurally incomplete.
 Drawing on the interpretive stack model of cognition
-\citep{minamoto2026overwrite,minamoto2026accum}, we argue that compaction is
+\citep{minamoto2026accumulation}, we argue that compaction is
 fundamentally a frame-selection problem: the compression operation implicitly
 decides which interpretive frames are foregrounded and which are archived.
 Without a principled account of this decision, compaction risks
@@ -79,15 +79,15 @@ relevant.
 
 
 \begin{remark}[Terminological note on ``overwrite'']
-See \cite{minamoto2026overwrite} for the precise definition.
+See \cite{minamoto2026accumulation}, Section~2 for the precise definition.
 In this paper, \emph{overwrite} denotes a frame-dominant transition
 (superposition $+$ selection-dominance), not deletion of prior frames.
 \end{remark}
 
 \section{The Interpretive Stack Model: Brief Summary}
 
-We summarize the relevant framework from \citet{minamoto2026overwrite,minamoto2026accum};
-readers familiar with these papers may skip to Section~3.
+We summarize the relevant framework from \citet{minamoto2026accumulation};
+readers familiar with that paper may skip to Section~3.
 
 \begin{definition}[Interpretive Frame]
 An interpretive frame $F$ is a function from inputs to outputs induced
@@ -111,7 +111,7 @@ distribution of intended input contexts. SSC failure occurs when $S$
 activates a frame $F_k \neq F^*$ for some input in the intended distribution.
 \end{definition}
 
-The central claim of \citet{minamoto2026accum} is that prior interpretive
+The central claim of \citet{minamoto2026accumulation} is that prior interpretive
 frames are not overwritten by fine-tuning but archived: they remain
 accessible and may be reactivated under appropriate conditions. SSC
 measures the model's ability to maintain the correct frame despite the
@@ -185,7 +185,7 @@ Operationally, SSC-aware evaluation would require:
 
 \section{Relation to LightThinker++, Neural Computer, and Thinking Mid-Training}
 
-LightThinker++ \citep{lightthinkerplusplus2026} introduces three explicit
+LightThinker++ \citep{lighttinkerplusplus2026} introduces three explicit
 memory operations: Commit, Expand, and Fold. The Expand operation implicitly
 acknowledges that archived content may need retrieval. However,
 LightThinker++ does not address what should be archived beyond
@@ -327,7 +327,7 @@ Memento: Teaching LLMs to manage their own context for long-horizon
 reasoning.
 arXiv preprint.
 
-\bibitem[LightThinker++(2026)]{lightthinkerplusplus2026}
+\bibitem[LightThinker++(2026)]{lighttinkerplusplus2026}
 LightThinker++ Team (2026).
 LightThinker++: Commit, Expand, Fold for efficient reasoning.
 arXiv preprint.
@@ -343,23 +343,17 @@ Thinking LLMs: General instruction following with thought generation
 via mid-training.
 arXiv:2601.21343.
 
-\bibitem[Minamoto(2026a)]{minamoto2026overwrite}
-Minamoto, M. (2026a).
-Abduction as overwrite: Negative abductive capability as a structural
-condition for reliable inference.
-Preprint.
-\url{https://github.com/minamominamoto/topology-of-grounding}
-
-\bibitem[Minamoto(2026b)]{minamoto2026accum}
-Minamoto, M. (2026b).
-Abductive accumulation: Why interpretive frames persist and how
-selection stability determines cognitive reliability.
+\bibitem[Minamoto(2026)]{minamoto2026accumulation}
+Minamoto, M. (2026).
+Abductive accumulation: Why interpretive frames persist, and how they
+drive hallucination in language models.
 Preprint.
 \url{https://github.com/minamominamoto/topology-of-grounding}
 
 \bibitem[Biderman et al.(2023)]{biderman2023}
 Biderman, S., et al.\ 2023.
-Pythia: A suite for analyzing large language models across training and scaling.
+Pythia: A suite for analyzing large language models across training
+and scaling.
 \textit{Proceedings of ICML 2023}.
 
 \end{thebibliography}
